@@ -23,17 +23,29 @@ from pipeline import (
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIVADO = "PESSOA_SINTETICA_SIGILOSA"
+VAGA = "Obrigatório: Python. Experiência e senioridade: sênior. Desejável: formação na área."
 P01 = {
     "nome_candidato": PRIVADO,
     "cargo_atual": "Desenvolvimento",
     "anos_experiencia_total": 2,
     "habilidades_tecnicas": ["Python"],
     "formacao": "Curso sintetico",
+    "experiencias": [],
 }
 P02 = {
     "analise_passo_a_passo": ["Evidencia sintetica"],
     "gaps_identificados": [],
     "score_aderencia": 80,
+    "avaliacoes_requisitos": [
+        {"requisito": "Python", "categoria": "obrigatorios", "situacao": "demonstrado", "evidencia": "Python", "esclarecer_entrevista": None},
+        {"requisito": "sênior", "categoria": "experiencia_senioridade", "situacao": "nao_informado", "evidencia": None, "esclarecer_entrevista": "Qual a senioridade das atividades exercidas?"},
+        {"requisito": "formação na área", "categoria": "desejaveis", "situacao": "demonstrado", "evidencia": "Curso sintetico", "esclarecer_entrevista": None},
+    ],
+    "pontuacao_categorias": [
+        {"categoria": "obrigatorios", "pontos_obtidos": 70, "pontos_maximos": 70},
+        {"categoria": "experiencia_senioridade", "pontos_obtidos": 0, "pontos_maximos": 20},
+        {"categoria": "desejaveis", "pontos_obtidos": 10, "pontos_maximos": 10},
+    ],
 }
 P03 = {
     "status_recomendacao": "Recomendado com Ressalvas",
@@ -83,8 +95,8 @@ class PipelineTests(SemRede):
     def test_respostas_validas_e_configuracao_gemini(self):
         client = cliente_simulado(P01, P02, P03)
         dados = executar_p01_extracao(client, "CV sintetico")
-        analise = executar_p02_aderencia(client, dados, "Vaga sintetica")
-        parecer = executar_p03_parecer(client, dados, analise, "Vaga sintetica")
+        analise = executar_p02_aderencia(client, dados, VAGA)
+        parecer = executar_p03_parecer(client, dados, analise, VAGA)
         self.assertEqual(dados, P01)
         self.assertEqual(analise, P02)
         self.assertEqual(parecer, P03)
@@ -121,7 +133,7 @@ class PipelineTests(SemRede):
         for resposta in casos:
             with self.subTest(resposta=resposta):
                 with self.assertRaisesRegex(ErroPipeline, "P02"):
-                    executar_p02_aderencia(cliente_simulado(resposta), P01, "Vaga")
+                    executar_p02_aderencia(cliente_simulado(resposta), P01, VAGA)
 
     def test_p03_rejeita_status_perguntas_e_resumo_invalidos(self):
         casos = [dict(P03, status_recomendacao="Outro"),
@@ -134,15 +146,15 @@ class PipelineTests(SemRede):
         for resposta in casos:
             with self.subTest(resposta=resposta):
                 with self.assertRaisesRegex(ErroPipeline, "P03"):
-                    executar_p03_parecer(cliente_simulado(resposta), P01, P02, "Vaga")
+                    executar_p03_parecer(cliente_simulado(resposta), P01, P02, VAGA)
 
     def test_logs_pipeline_nao_contem_dados_do_candidato(self):
         output = io.StringIO()
         client = cliente_simulado(P01, P02, P03)
         with redirect_stdout(output):
             dados = executar_p01_extracao(client, PRIVADO)
-            analise = executar_p02_aderencia(client, dados, "Vaga")
-            executar_p03_parecer(client, dados, analise, "Vaga")
+            analise = executar_p02_aderencia(client, dados, VAGA)
+            executar_p03_parecer(client, dados, analise, VAGA)
         self.assertNotIn(PRIVADO, output.getvalue())
         self.assertIn("Resposta P01 validada", output.getvalue())
 
@@ -185,7 +197,7 @@ class InterfaceTests(SemRede):
     def analisar(self, texto="CV sintetico", cargo="Vaga sintetica"):
         self.app.run()
         self.app.text_input[0].set_value(cargo)
-        self.app.text_area[0].set_value("Python")
+        self.app.text_area[0].set_value(VAGA)
         self.app.text_area[1].set_value(texto)
         self.app.button[0].click().run()
         self.assertEqual(len(self.app.exception), 0)

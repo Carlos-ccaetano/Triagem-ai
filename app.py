@@ -85,7 +85,7 @@ if st.button("🚀 Analisar Candidato", type="primary", use_container_width=True
                 st.write("🔍 **Etapa 1 (P01):** Extraindo entidades estruturadas do currículo...")
                 dados_p01 = executar_p01_extracao(client, texto_final_cv, log=log_execucao)
 
-                st.write("🧠 **Etapa 2 (P02):** Avaliando aderência via Chain of Thought...")
+                st.write("🧠 **Etapa 2 (P02):** Avaliando evidências por requisito...")
                 analise_p02 = executar_p02_aderencia(client, dados_p01, descricao_completa_vaga, log=log_execucao)
 
                 st.write("📋 **Etapa 3 (P03):** Gerando parecer executivo e perguntas de entrevista...")
@@ -100,12 +100,13 @@ if st.button("🚀 Analisar Candidato", type="primary", use_container_width=True
             m1.metric("Candidato", dados_p01.get("nome_candidato", "Não identificado"))
             m2.metric("Score de Aderência", f"{analise_p02.get('score_aderencia', 0)} / 100")
             m3.metric("Status", parecer_p03.get("status_recomendacao", "—"))
+            st.caption("Classificação de aderência documental para apoio à revisão humana; não é uma decisão automática de contratação ou rejeição.")
 
             st.info(f"**Resumo Executivo (P03):** {parecer_p03.get('resumo_executivo', '')}")
 
             tab1, tab2, tab3, tab4 = st.tabs([
                 "🎯 Perguntas de Entrevista (P03)",
-                "🧠 Raciocínio CoT & Gaps (P02)",
+                "🧠 Evidências e Pontuação (P02)",
                 "🗂️ JSON Extraído (P01)",
                 "🖥️ Logs de Execução Real",
             ])
@@ -115,10 +116,23 @@ if st.button("🚀 Analisar Candidato", type="primary", use_container_width=True
                     st.markdown(f"- {pergunta}")
 
             with tab2:
-                st.markdown("**Análise Passo a Passo:**")
+                st.table([
+                    {
+                        "Requisito": item["requisito"],
+                        "Categoria": item["categoria"].replace("_", " "),
+                        "Situação": {"demonstrado": "Demonstrado", "nao_informado": "Não informado", "nao_atendido": "Não atendido explicitamente"}[item["situacao"]],
+                        "Evidência": item["evidencia"] or "Não informada",
+                        "Esclarecer em entrevista": item["esclarecer_entrevista"] or "—",
+                    }
+                    for item in analise_p02["avaliacoes_requisitos"]
+                ])
+                for parte in analise_p02["pontuacao_categorias"]:
+                    st.write(f"{parte['categoria'].replace('_', ' ')}: {parte['pontos_obtidos']:g}/{parte['pontos_maximos']}")
+                st.caption("Score normalizado pelas categorias presentes. Não informado significa ausência de evidência documental, não ausência de competência.")
+                st.markdown("**Síntese técnica:**")
                 for passo in analise_p02.get("analise_passo_a_passo", []):
                     st.markdown(f"- {passo}")
-                st.markdown("**Gaps Identificados:**")
+                st.markdown("**Pontos a esclarecer e requisitos não atendidos explicitamente:**")
                 for gap in analise_p02.get("gaps_identificados", []):
                     st.markdown(f"- ⚠️ {gap}")
 
