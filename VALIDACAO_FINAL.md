@@ -102,8 +102,9 @@ Ambiente medido: Python 3.12.3, Streamlit 1.39.0, google-genai 3.4.0, pypdf 7.1.
 Pydantic 2.14.3 e python-dotenv 1.2.4. Não foram testadas outras plataformas ou todas as
 versões mínimas permitidas em `requirements.txt`.
 
-`main` e a tag `baseline-inicial-2026-11-17` permanecem em `41028c1`; branches Etapas 01–05
-preservadas. A Etapa 06 foi registrada somente em sua branch local, sem push, merge ou deploy.
+Ao terminar a validação técnica da Etapa 06, `main` e a tag `baseline-inicial-2026-11-17`
+estavam em `41028c1`, com as branches Etapas 01–05 preservadas e sem publicação naquele
+momento. A consolidação posterior autorizada no GitHub está registrada ao final deste relatório.
 
 Para completar o aceite, configure a chave localmente conforme o README e execute a análise
 individual e o lote de dois currículos fictícios dentro do limite autorizado, sem retries.
@@ -302,3 +303,36 @@ com campos: `data`, `commit`, `modelo`, `caso`, `etapas_observadas`, `contratos`
 `revisao_semantica`, `score_e_componentes`, `classificacao`, `perguntas_quantidade`,
 `tempo_total`, `estado_final` e `falha`. No relatório acadêmico, publique somente uma síntese
 sem dados pessoais, diferenciando **aprovado**, **falhou** e **não verificado** por critério.
+
+
+## Consolidação para GitHub
+
+Em 17/11/2026, o remoto `https://github.com/Carlos-ccaetano/Triagem-ai.git` foi consultado
+com `git ls-remote` e `git fetch`: estava acessível e sem branches ou tags. O baseline
+`41028c1`, a implementação `d42e90f` e a revisão documental `2da66a5` foram preservados.
+
+O commit `495093b` acrescentou instruções de clone/instalação/testes para Linux/WSL e
+Windows PowerShell e proteção de documentos acadêmicos e auxiliares SQLite no `.gitignore`.
+Código, prompts, rubrica, dependências e os seis arquivos de teste não foram alterados.
+
+Uma cópia isolada desse commit, em outro caminho, recebeu ambiente virtual novo e somente
+as dependências de `requirements.txt`. Os **67 testes passaram em 10,738 s**; `pip check`
+e compilação passaram. O WSL não tinha `ensurepip`: o pip foi preparado apenas no ambiente
+virtual isolado. Em uma instalação Linux nova, é necessário ter o suporte a `venv`/`ensurepip`.
+A execução nativa no Windows não foi testada.
+
+Antes do envio, nove commits e seus arquivos foram auditados: não havia `.env`, `.venv`,
+bancos, PDFs, CSVs ou documentos Word versionados. A busca por padrões conhecidos de
+credenciais não encontrou ocorrências; esse exame não garante detecção de qualquer segredo.
+Foram mantidas somente capturas sintéticas e registros técnicos sem currículos integrais.
+
+A `main` avançou por **fast-forward**, sem merge commit, preservando toda a cadeia. Foram
+publicadas somente `main` e a tag `baseline-inicial-2026-11-17`, sem force-push ou deploy.
+A publicação de `495093b` foi confirmada por nova consulta remota e um clone do GitHub:
+branch padrão `main`, tag apontando para `41028c1` e 19 arquivos idênticos. Nesse clone,
+o banco vazio foi criado automaticamente e a interface iniciou sem chave, com o cliente
+Gemini bloqueado durante a verificação. Nenhuma chamada real ao Gemini foi realizada.
+
+Este registro documental complementa a versão publicada, sem alterar o código validado.
+Logs e checkouts desse ensaio ficam em `data/verificacao-publicacao/`, ignorados pelo Git.
+O aceite completo do MVP continua dependendo dos ensaios reais descritos neste relatório.
