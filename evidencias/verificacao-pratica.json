@@ -1,0 +1,58 @@
+{
+  "csv_browser": {
+    "individual": {
+      "download_igual_ao_exportador": true,
+      "bom_utf8": true,
+      "linhas_com_cabecalho": 2,
+      "colunas": 9,
+      "cabecalho": [
+        "Posição",
+        "Nome identificado",
+        "Vaga",
+        "Score de aderência",
+        "Classificação",
+        "Resumo da avaliação",
+        "Pergunta de entrevista 1",
+        "Pergunta de entrevista 2",
+        "Pergunta de entrevista 3"
+      ]
+    },
+    "lote": {
+      "download_igual_ao_exportador": true,
+      "bom_utf8": true,
+      "linhas_com_cabecalho": 3,
+      "colunas": 9,
+      "cabecalho": [
+        "Posição",
+        "Nome identificado",
+        "Vaga",
+        "Score de aderência",
+        "Classificação",
+        "Resumo da avaliação",
+        "Pergunta de entrevista 1",
+        "Pergunta de entrevista 2",
+        "Pergunta de entrevista 3"
+      ]
+    }
+  },
+  "reinicio": {
+    "registros_antes": 2,
+    "registros_depois": 2,
+    "ids_preservados": true
+  },
+  "chamadas_reais": 0,
+  "exclusao_confirmada_ui": {
+    "registros_antes": 2,
+    "registros_depois": 1,
+    "id_individual_removido": true,
+    "integridade_sqlite": "ok"
+  },
+  "excel": {
+    "lote_importado": true,
+    "codificacao": "UTF-8",
+    "separador": ";",
+    "colunas": 9,
+    "linhas_de_dados": 2,
+    "formulas_aritmeticas_preservadas_como_texto": true
+  }
+}

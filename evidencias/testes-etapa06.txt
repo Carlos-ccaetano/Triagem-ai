@@ -1,0 +1,74 @@
+Extrato literal do log de 17/11/2026.
+Comando: .venv/bin/python -m unittest discover -s tests -v
+Gemini simulado; conexoes de rede bloqueadas pelos testes.
+Log integral local: .venv/etapa06-tests.log
+
+test_chave_ausente_nao_chama_modelo (test_etapa01.InterfaceTests.test_chave_ausente_nao_chama_modelo) ... 2026-11-17 13:44:39.328 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_curriculo_ausente_nao_chama_modelo (test_etapa01.InterfaceTests.test_curriculo_ausente_nao_chama_modelo) ... 2026-11-17 13:44:39.561 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_erro_provedor_nao_expoe_conteudo_nos_logs_ou_mensagem (test_etapa01.InterfaceTests.test_erro_provedor_nao_expoe_conteudo_nos_logs_ou_mensagem) ... 2026-11-17 13:44:39.653 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_interface_com_respostas_validas (test_etapa01.InterfaceTests.test_interface_com_respostas_validas) ... 2026-11-17 13:44:39.831 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_log_pdf_preserva_contagem_sem_nome_arquivo (test_etapa01.InterfaceTests.test_log_pdf_preserva_contagem_sem_nome_arquivo) ... 2026-11-17 13:44:41.240 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_pdf_invalido_sem_manual_nao_chama_modelo (test_etapa01.InterfaceTests.test_pdf_invalido_sem_manual_nao_chama_modelo) ... 2026-11-17 13:44:41.490 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_resposta_invalida_interrompe_na_etapa_correta (test_etapa01.InterfaceTests.test_resposta_invalida_interrompe_na_etapa_correta) ... 2026-11-17 13:44:41.629 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_texto_manual_tem_prioridade_sobre_pdf_invalido (test_etapa01.InterfaceTests.test_texto_manual_tem_prioridade_sobre_pdf_invalido) ... 2026-11-17 13:44:42.029 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_vaga_vazia_nao_chama_modelo (test_etapa01.InterfaceTests.test_vaga_vazia_nao_chama_modelo) ... 2026-11-17 13:44:42.157 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_json_malformado_ou_resposta_ausente_tem_erro_seguro (test_etapa01.PipelineTests.test_json_malformado_ou_resposta_ausente_tem_erro_seguro) ... ok
+test_logs_pipeline_nao_contem_dados_do_candidato (test_etapa01.PipelineTests.test_logs_pipeline_nao_contem_dados_do_candidato) ... ok
+test_p01_rejeita_campos_tipos_e_valores_invalidos (test_etapa01.PipelineTests.test_p01_rejeita_campos_tipos_e_valores_invalidos) ... ok
+test_p02_rejeita_score_e_listas_invalidos (test_etapa01.PipelineTests.test_p02_rejeita_score_e_listas_invalidos) ... ok
+test_p03_rejeita_status_perguntas_e_resumo_invalidos (test_etapa01.PipelineTests.test_p03_rejeita_status_perguntas_e_resumo_invalidos) ... ok
+test_pdf_arquivo_vazio (test_etapa01.PipelineTests.test_pdf_arquivo_vazio) ... ok
+test_pdf_corrompido (test_etapa01.PipelineTests.test_pdf_corrompido) ... EOF marker not found
+test_pdf_multiplas_paginas_e_reposicionamento (test_etapa01.PipelineTests.test_pdf_multiplas_paginas_e_reposicionamento) ... ok
+test_pdf_pagina_sem_texto (test_etapa01.PipelineTests.test_pdf_pagina_sem_texto) ... ok
+test_pdf_sem_paginas (test_etapa01.PipelineTests.test_pdf_sem_paginas) ... ok
+test_respostas_validas_e_configuracao_gemini (test_etapa01.PipelineTests.test_respostas_validas_e_configuracao_gemini) ... ok
+test_categorias_ausentes_nao_reduzem_score (test_etapa02.Etapa02Tests.test_categorias_ausentes_nao_reduzem_score) ... ok
+test_componentes_fracionarios_e_arredondamento_final (test_etapa02.Etapa02Tests.test_componentes_fracionarios_e_arredondamento_final) ... ok
+test_contexto_de_projeto_nao_transforma_carreira_em_tempo_de_tecnologia (test_etapa02.Etapa02Tests.test_contexto_de_projeto_nao_transforma_carreira_em_tempo_de_tecnologia) ... ok
+test_dados_desconhecidos_continuam_nulos (test_etapa02.Etapa02Tests.test_dados_desconhecidos_continuam_nulos) ... ok
+test_evidencias_e_requisitos_inventados_sao_rejeitados (test_etapa02.Etapa02Tests.test_evidencias_e_requisitos_inventados_sao_rejeitados) ... ok
+test_instrucoes_embutidas_ficam_nos_dados_e_nao_alteram_score (test_etapa02.Etapa02Tests.test_instrucoes_embutidas_ficam_nos_dados_e_nao_alteram_score) ... ok
+test_interface_mostra_evidencias_componentes_e_revisao_humana (test_etapa02.Etapa02Tests.test_interface_mostra_evidencias_componentes_e_revisao_humana) ... 2026-11-17 13:44:42.308 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_limites_de_classificacao_0_50_85_100 (test_etapa02.Etapa02Tests.test_limites_de_classificacao_0_50_85_100) ... ok
+test_nao_atendimento_explicito_exige_evidencia_presente (test_etapa02.Etapa02Tests.test_nao_atendimento_explicito_exige_evidencia_presente) ... ok
+test_nome_nao_e_enviado_a_p02_p03_e_logs_nao_expoem_respostas (test_etapa02.Etapa02Tests.test_nome_nao_e_enviado_a_p02_p03_e_logs_nao_expoem_respostas) ... ok
+test_omissao_nao_e_nao_atendimento_explicito (test_etapa02.Etapa02Tests.test_omissao_nao_e_nao_atendimento_explicito) ... ok
+test_parecer_respeita_pontuacao_e_nao_pode_retornar_outro_score (test_etapa02.Etapa02Tests.test_parecer_respeita_pontuacao_e_nao_pode_retornar_outro_score) ... ok
+test_projeto_real_sustenta_tecnologia_e_sinonimo_sql (test_etapa02.Etapa02Tests.test_projeto_real_sustenta_tecnologia_e_sinonimo_sql) ... ok
+test_rubrica_rejeita_componentes_e_score_incoerentes (test_etapa02.Etapa02Tests.test_rubrica_rejeita_componentes_e_score_incoerentes) ... ok
+test_score_alto_com_obrigatorio_nao_informado_exige_ressalvas (test_etapa02.Etapa02Tests.test_score_alto_com_obrigatorio_nao_informado_exige_ressalvas) ... ok
+test_callback_de_upload_invalida_pdf_com_mesmo_nome_sem_chamadas (test_etapa03.Etapa03Tests.test_callback_de_upload_invalida_pdf_com_mesmo_nome_sem_chamadas) ... 2026-11-17 13:44:42.496 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_editar_entradas_limpa_resultado_sem_executar_modelo (test_etapa03.Etapa03Tests.test_editar_entradas_limpa_resultado_sem_executar_modelo) ... 2026-11-17 13:44:42.685 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_falha_nova_remove_sucesso_anterior_e_preserva_erro_seguro (test_etapa03.Etapa03Tests.test_falha_nova_remove_sucesso_anterior_e_preserva_erro_seguro) ... 2026-11-17 13:44:43.224 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_nome_desconhecido_aparece_como_nao_informado (test_etapa03.Etapa03Tests.test_nome_desconhecido_aparece_como_nao_informado) ... 2026-11-17 13:44:43.770 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_nova_analise_substitui_o_resultado_e_permanece_visivel (test_etapa03.Etapa03Tests.test_nova_analise_substitui_o_resultado_e_permanece_visivel) ... 2026-11-17 13:44:44.075 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_resultado_e_logs_permanecem_em_reruns_sem_chamadas (test_etapa03.Etapa03Tests.test_resultado_e_logs_permanecem_em_reruns_sem_chamadas) ... 2026-11-17 13:44:44.370 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_score_ausente_ou_invalido_nao_vira_zero_nem_mantem_resultado (test_etapa03.Etapa03Tests.test_score_ausente_ou_invalido_nao_vira_zero_nem_mantem_resultado) ... 2026-11-17 13:44:44.623 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_zero_validado_e_exibido_como_pontuacao_real (test_etapa03.Etapa03Tests.test_zero_validado_e_exibido_como_pontuacao_real) ... 2026-11-17 13:44:46.049 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_editar_vaga_ou_selecao_invalida_ranking_sem_chamadas (test_etapa04.LoteInterfaceTests.test_editar_vaga_ou_selecao_invalida_ranking_sem_chamadas) ... 2026-11-17 13:44:46.206 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_falha_identifica_arquivo_so_na_interface_e_preserva_validos (test_etapa04.LoteInterfaceTests.test_falha_identifica_arquivo_so_na_interface_e_preserva_validos) ... 2026-11-17 13:44:46.853 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_modos_nao_misturam_resultados_e_individual_continua_funcionando (test_etapa04.LoteInterfaceTests.test_modos_nao_misturam_resultados_e_individual_continua_funcionando) ... 2026-11-17 13:44:47.038 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_nova_execucao_substitui_lote_e_todas_as_falhas_nao_exibem_sucesso_antigo (test_etapa04.LoteInterfaceTests.test_nova_execucao_substitui_lote_e_todas_as_falhas_nao_exibem_sucesso_antigo) ... 2026-11-17 13:44:47.475 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_ranking_e_detalhes_preservados_sem_chamadas_na_selecao_e_rerun (test_etapa04.LoteInterfaceTests.test_ranking_e_detalhes_preservados_sem_chamadas_na_selecao_e_rerun) ... 2026-11-17 13:44:48.011 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_vazio_e_acima_do_limite_na_interface_nao_criam_cliente (test_etapa04.LoteInterfaceTests.test_vazio_e_acima_do_limite_na_interface_nao_criam_cliente) ... 2026-11-17 13:44:48.291 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_falhas_pdf_api_p02_p03_nao_interrompem_demais_nem_criam_scores (test_etapa04.LoteTests.test_falhas_pdf_api_p02_p03_nao_interrompem_demais_nem_criam_scores) ... EOF marker not found
+test_limite_rejeita_vazio_e_onze_sem_chamadas_e_aceita_dez (test_etapa04.LoteTests.test_limite_rejeita_vazio_e_onze_sem_chamadas_e_aceita_dez) ... ok
+test_reutiliza_etapas_sequencialmente_ordena_e_preserva_empates_e_zero (test_etapa04.LoteTests.test_reutiliza_etapas_sequencialmente_ordena_e_preserva_empates_e_zero) ... ok
+test_erros_de_armazenamento_preservam_resultado_e_nao_expoem_detalhes (test_etapa05.HistoricoInterfaceTests.test_erros_de_armazenamento_preservam_resultado_e_nao_expoem_detalhes) ... 2026-11-17 13:44:48.646 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_exclusao_exige_confirmacao_e_fecha_registro_removido (test_etapa05.HistoricoInterfaceTests.test_exclusao_exige_confirmacao_e_fecha_registro_removido) ... 2026-11-17 13:44:48.888 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_lote_historico_reutiliza_ranking_e_detalhes_sem_substituir_sessao (test_etapa05.HistoricoInterfaceTests.test_lote_historico_reutiliza_ranking_e_detalhes_sem_substituir_sessao) ... 2026-11-17 13:44:49.077 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_nova_sessao_recupera_e_exporta_sem_chave_ou_chamadas (test_etapa05.HistoricoInterfaceTests.test_nova_sessao_recupera_e_exporta_sem_chave_ou_chamadas) ... 2026-11-17 13:44:49.528 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_salvamento_so_explicito_e_repeticao_nao_duplica (test_etapa05.HistoricoInterfaceTests.test_salvamento_so_explicito_e_repeticao_nao_duplica) ... 2026-11-17 13:44:49.856 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+test_banco_e_tabela_criados_automaticamente (test_etapa05.PersistenciaTests.test_banco_e_tabela_criados_automaticamente) ... ok
+test_csv_colunas_bom_pontuacao_perguntas_e_privacidade_sem_banco (test_etapa05.PersistenciaTests.test_csv_colunas_bom_pontuacao_perguntas_e_privacidade_sem_banco) ... ok
+test_csv_neutraliza_formulas_apenas_na_exportacao (test_etapa05.PersistenciaTests.test_csv_neutraliza_formulas_apenas_na_exportacao) ... ok
+test_exclusao_e_consultas_parametrizadas (test_etapa05.PersistenciaTests.test_exclusao_e_consultas_parametrizadas) ... ok
+test_historico_ordena_datas_em_utc_nao_ordem_de_insercao (test_etapa05.PersistenciaTests.test_historico_ordena_datas_em_utc_nao_ordem_de_insercao) ... ok
+test_mesmo_id_nao_duplica_nem_sobrescreve (test_etapa05.PersistenciaTests.test_mesmo_id_nao_duplica_nem_sobrescreve) ... ok
+test_resultados_invalidos_nao_sao_gravados (test_etapa05.PersistenciaTests.test_resultados_invalidos_nao_sao_gravados) ... ok
+test_salva_individual_recupera_em_nova_conexao_sem_dados_brutos (test_etapa05.PersistenciaTests.test_salva_individual_recupera_em_nova_conexao_sem_dados_brutos) ... ok
+test_salva_lote_preserva_ordem_e_contagem_sem_falhas_identificaveis (test_etapa05.PersistenciaTests.test_salva_lote_preserva_ordem_e_contagem_sem_falhas_identificaveis) ... ok
+test_clientes_individual_e_lote_desabilitam_retries_automaticos (test_etapa06.ValidacaoFinalTests.test_clientes_individual_e_lote_desabilitam_retries_automaticos) ... 2026-11-17 13:44:50.465 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+Ran 67 tests in 11.430s
+OK

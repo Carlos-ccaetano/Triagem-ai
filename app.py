@@ -114,7 +114,7 @@ if st.button("Analisar currículos" if em_lote else "Analisar currículo", type=
         with st.status("Analisando currículos..." if em_lote else "Analisando currículo...", expanded=True) as status:
             try:
                 if em_lote:
-                    client = genai.Client(api_key=api_key)
+                    client = genai.Client(api_key=api_key, http_options={"retry_options": {"attempts": 1}})
                     lote = executar_lote(
                         client, arquivos_pdf, descricao_completa_vaga, log=log_execucao,
                         progresso=lambda indice, total: status.update(label=f"Analisando currículo {indice} de {total}"),
@@ -136,7 +136,7 @@ if st.button("Analisar currículos" if em_lote else "Analisar currículo", type=
                         log_execucao(f"PDF_EXTRACTED_CHARS: {len(texto_final_cv)}")
                         mensagem_erro = ERRO_ANALISE
                     log_execucao("--- INICIANDO PIPELINE TRIAGEM-AI ---")
-                    client = genai.Client(api_key=api_key)
+                    client = genai.Client(api_key=api_key, http_options={"retry_options": {"attempts": 1}})
                     dados_p01 = executar_p01_extracao(client, texto_final_cv, log=log_execucao)
 
                     st.write("2. Comparando com os requisitos da vaga.")
