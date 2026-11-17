@@ -31,11 +31,11 @@ os testes abaixo usam respostas simuladas e bloqueiam conexões de rede.
 
 ## Interface e estado da sessão — Etapa 03
 
-A tela tem quatro áreas: Vaga, Currículo, Avaliação e Perguntas para entrevista.
+A análise individual tem quatro áreas: Vaga, Currículo, Avaliação e Perguntas para entrevista.
 Os logs e os componentes da pontuação ficam em **Detalhes técnicos da análise**.
 A pontuação apoia a revisão humana, sem alterar os rótulos internos do parecer.
 
-- O pipeline executa somente ao clicar em **Analisar currículo**, com entradas preenchidas.
+- O pipeline executa somente ao clicar em **Analisar currículo** ou **Analisar currículos**, com entradas preenchidas.
 - `st.session_state["resultado"]` guarda apenas a última análise completa: dados extraídos,
   avaliação e parecer. A apresentação fica fora do bloco do botão e reutiliza esse resultado.
 - Alterar título, requisitos, texto manual ou upload limpa resultado, erro e logs pelos
@@ -50,6 +50,48 @@ A pontuação apoia a revisão humana, sem alterar os rótulos internos do parec
 A sessão usa apenas memória. Não há histórico nem gravação de currículos ou resultados em
 arquivo/banco. Fechar a sessão, recarregar completamente a página ou reiniciar o processo
 pode perder o estado; isso não é persistência durável.
+
+## Análise individual e lote — Etapa 04
+
+Em **Tipo de análise**, escolha o modo e informe o título e os requisitos da mesma vaga.
+
+- **Análise individual:** envie um PDF ou cole o texto e clique em **Analisar currículo**.
+  Quando ambos estiverem preenchidos, o texto manual tem prioridade.
+- **Análise em lote:** selecione de **1 a 10 PDFs** e clique em **Analisar currículos**.
+  Mais de 10 arquivos são recusados antes de iniciar as chamadas. Não há texto manual
+  nesse modo; para um PDF sem texto, use a alternativa manual na análise individual.
+
+O lote processa um currículo por vez, reutilizando P01 → P02 → P03 e seus schemas.
+Cada avaliação completa usa três chamadas ao Gemini. Uma falha pode interromper aquele
+currículo antes disso, sem impedir os demais. Não há paralelismo nem retries automáticos.
+O progresso informa a posição real, por exemplo, “Analisando currículo 2 de 5”.
+
+O ranking é ordenado em Python pelo `score_aderencia` validado de P02, do maior para o menor.
+Empates mantêm a ordem de envio. Não há nova fórmula, alteração da rubrica 70/20/10 ou
+chamada extra ao Gemini. A tabela mostra posição, nome, pontuação e classificação; ela
+apoia a análise humana e não determina contratação ou rejeição.
+
+Selecione um candidato em **Ver avaliação individual** para abrir o resumo, os requisitos,
+as evidências, os pontos a esclarecer e as três perguntas. Essa tela reutiliza os mesmos
+componentes da análise individual. Selecionar candidatos ou reexecutar a página não chama
+o Gemini novamente.
+
+Arquivos com erro são identificados na interface, separados dos resultados válidos e
+excluídos do ranking; não recebem zero como representação da falha. Se todos falharem,
+nenhuma avaliação é apresentada. Os logs técnicos registram posição e etapa, sem nomes
+de arquivos, conteúdo de currículos, respostas completas ou detalhes das exceções.
+
+`st.session_state["lote"]` guarda o ranking e a lista de falhas, separado de `resultado`
+da análise individual. Trocar o modo, alterar a vaga ou mudar os arquivos limpa os
+resultados anteriores. Uma nova execução também começa limpa. É necessário solicitar
+outra análise; o aplicativo não reprocessa entradas automaticamente. Os arquivos podem
+precisar ser selecionados novamente ao trocar de modo. Tudo permanece apenas na sessão,
+sem gravação em disco ou histórico entre sessões.
+
+Os 43 testes anteriores permanecem. Os testes do lote usam PDFs sintéticos reais em memória,
+Gemini simulado e conexões de rede bloqueadas. Cobrem chamadas às etapas existentes,
+ordenação, empates, limites, falhas isoladas, sessão, seleção sem novas chamadas e os modos.
+Uploads e seus callbacks são simulados no AppTest; não substituem inspeção manual do navegador.
 
 ## Pipeline e contratos — Etapa 02
 
@@ -146,6 +188,7 @@ de entrada, substituição do resultado, falhas sem sucesso antigo, erros seguro
 inválidas, zero válido e nome desconhecido. O upload é simulado com seu callback registrado;
 AppTest não substitui inspeção visual/manual do navegador.
 
-Não há persistência em disco, lote real, CSV, e-mails ou agentes adicionais. A simulação
-de ranking foi retirada da tela. Os logs não incluem nome, currículo, resposta completa ou
-detalhes brutos das exceções. Arquivos de credenciais e dados locais estão no `.gitignore`.
+Não há persistência em disco, exportação CSV, e-mails, OCR, autenticação ou agentes adicionais.
+O ranking usa avaliações reais do pipeline, sem dados simulados na aplicação. Sua qualidade
+depende das evidências e da interpretação do modelo; não foi aferida com chamadas reais
+nos testes de desenvolvimento. Credenciais e dados locais estão no `.gitignore`.

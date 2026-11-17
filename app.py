@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from google import genai
 
 from pipeline import (
+    LIMITE_LOTE,
+    executar_lote,
     executar_p01_extracao,
     executar_p02_aderencia,
     executar_p03_parecer,
@@ -22,6 +24,8 @@ ERRO_PDF = "Não conseguimos ler este PDF. Tente outro arquivo ou cole o texto d
 def limpar_avaliacao():
     """Mudanças de entrada e novas tentativas invalidam o resultado anterior."""
     st.session_state.pop("resultado", None)
+    st.session_state.pop("lote", None)
+    st.session_state.pop("candidato_lote", None)
     st.session_state.pop("erro", None)
     st.session_state.logs = []
 
@@ -43,6 +47,9 @@ if not api_key:
     st.error("Configure a chave GEMINI_API_KEY no arquivo .env para iniciar a análise.")
     st.stop()
 
+modo = st.radio("Tipo de análise", ["Análise individual", "Análise em lote"], horizontal=True, on_change=limpar_avaliacao)
+em_lote = modo == "Análise em lote"
+
 col_vaga, col_cv = st.columns(2)
 with col_vaga:
     st.subheader("Vaga")
@@ -55,58 +62,109 @@ with col_vaga:
     )
 
 with col_cv:
-    st.subheader("Currículo")
-    arquivo_pdf = st.file_uploader("Envie um currículo em PDF", type=["pdf"], on_change=limpar_avaliacao)
-    texto_cv_manual = st.text_area(
-        "Ou cole o texto do currículo",
-        height=145,
-        placeholder="Cole aqui as informações do currículo.",
-        on_change=limpar_avaliacao,
-    )
-    st.caption("Se você preencher o texto, ele será usado no lugar do PDF. O PDF precisa ter texto selecionável.")
+    st.subheader("Currículos" if em_lote else "Currículo")
+    if em_lote:
+        arquivos_pdf = st.file_uploader(
+            "Envie os currículos em PDF", type=["pdf"], accept_multiple_files=True,
+            on_change=limpar_avaliacao,
+        )
+        st.caption(f"Selecione até {LIMITE_LOTE} PDFs com texto selecionável para a mesma vaga.")
+    else:
+        arquivo_pdf = st.file_uploader("Envie um currículo em PDF", type=["pdf"], on_change=limpar_avaliacao)
+        texto_cv_manual = st.text_area(
+            "Ou cole o texto do currículo",
+            height=145,
+            placeholder="Cole aqui as informações do currículo.",
+            on_change=limpar_avaliacao,
+        )
+        st.caption("Se você preencher o texto, ele será usado no lugar do PDF. O PDF precisa ter texto selecionável.")
 
-if st.button("Analisar currículo", type="primary", use_container_width=True):
+if st.button("Analisar currículos" if em_lote else "Analisar currículo", type="primary", use_container_width=True):
     limpar_avaliacao()
     if not cargo_vaga.strip() or not requisitos_vaga.strip():
         st.warning("Preencha o título e a descrição da vaga antes de continuar.")
-    elif arquivo_pdf is None and not texto_cv_manual.strip():
+    elif em_lote and not arquivos_pdf:
+        st.warning("Selecione os currículos em PDF antes de continuar.")
+    elif em_lote and len(arquivos_pdf) > LIMITE_LOTE:
+        st.warning(f"Selecione no máximo {LIMITE_LOTE} currículos por análise.")
+    elif not em_lote and arquivo_pdf is None and not texto_cv_manual.strip():
         st.warning("Cole o texto do currículo ou envie um PDF com texto legível.")
     else:
         mensagem_erro = ERRO_ANALISE
-        with st.status("Analisando currículo...", expanded=True) as status:
+        descricao_completa_vaga = f"Cargo: {cargo_vaga}\nRequisitos: {requisitos_vaga}"
+        with st.status("Analisando currículos..." if em_lote else "Analisando currículo...", expanded=True) as status:
             try:
-                st.write("1. Lendo as informações profissionais.")
-                texto_final_cv = texto_cv_manual.strip()
-                if texto_final_cv:
-                    log_execucao("Texto manual recebido.")
+                if em_lote:
+                    client = genai.Client(api_key=api_key)
+                    lote = executar_lote(
+                        client, arquivos_pdf, descricao_completa_vaga, log=log_execucao,
+                        progresso=lambda indice, total: status.update(label=f"Analisando currículo {indice} de {total}"),
+                    )
+                    total_validos = len(lote["ranking"])
+                    status.update(
+                        label=f"Lote concluído: {total_validos} de {len(arquivos_pdf)} currículos analisados",
+                        state="complete" if total_validos else "error", expanded=False,
+                    )
+                    st.session_state.lote = lote
                 else:
-                    mensagem_erro = ERRO_PDF
-                    texto_final_cv = extrair_texto_pdf(arquivo_pdf)
-                    log_execucao(f"PDF_EXTRACTED_CHARS: {len(texto_final_cv)}")
-                    mensagem_erro = ERRO_ANALISE
-                log_execucao("--- INICIANDO PIPELINE TRIAGEM-AI ---")
-                descricao_completa_vaga = f"Cargo: {cargo_vaga}\nRequisitos: {requisitos_vaga}"
-                client = genai.Client(api_key=api_key)
-                dados_p01 = executar_p01_extracao(client, texto_final_cv, log=log_execucao)
+                    st.write("1. Lendo as informações profissionais.")
+                    texto_final_cv = texto_cv_manual.strip()
+                    if texto_final_cv:
+                        log_execucao("Texto manual recebido.")
+                    else:
+                        mensagem_erro = ERRO_PDF
+                        texto_final_cv = extrair_texto_pdf(arquivo_pdf)
+                        log_execucao(f"PDF_EXTRACTED_CHARS: {len(texto_final_cv)}")
+                        mensagem_erro = ERRO_ANALISE
+                    log_execucao("--- INICIANDO PIPELINE TRIAGEM-AI ---")
+                    client = genai.Client(api_key=api_key)
+                    dados_p01 = executar_p01_extracao(client, texto_final_cv, log=log_execucao)
 
-                st.write("2. Comparando com os requisitos da vaga.")
-                analise_p02 = executar_p02_aderencia(client, dados_p01, descricao_completa_vaga, log=log_execucao)
+                    st.write("2. Comparando com os requisitos da vaga.")
+                    analise_p02 = executar_p02_aderencia(client, dados_p01, descricao_completa_vaga, log=log_execucao)
 
-                st.write("3. Preparando o resumo e as perguntas.")
-                parecer_p03 = executar_p03_parecer(client, dados_p01, analise_p02, descricao_completa_vaga, log=log_execucao)
+                    st.write("3. Preparando o resumo e as perguntas.")
+                    parecer_p03 = executar_p03_parecer(client, dados_p01, analise_p02, descricao_completa_vaga, log=log_execucao)
 
-                status.update(label="Avaliação concluída", state="complete", expanded=False)
-                st.session_state.resultado = {"dados": dados_p01, "analise": analise_p02, "parecer": parecer_p03}
+                    status.update(label="Avaliação concluída", state="complete", expanded=False)
+                    st.session_state.resultado = {"dados": dados_p01, "analise": analise_p02, "parecer": parecer_p03}
             except Exception:
                 log_execucao("ERROR: Não foi possível concluir a avaliação.")
                 st.session_state.erro = mensagem_erro
                 status.update(label="Não foi possível concluir a avaliação", state="error", expanded=False)
 
 # A apresentação não depende do botão e não executa chamadas ao modelo.
+resultado = st.session_state.get("resultado") if not em_lote else None
+lote = st.session_state.get("lote") if em_lote else None
+if lote is not None:
+    st.subheader("Ranking")
+    st.caption("A ordem representa aderência documental à mesma vaga e apoia a análise humana, sem decisão automática de contratação.")
+    st.write(f"{len(lote['ranking'])} currículo(s) analisado(s); {len(lote['falhas'])} arquivo(s) não analisado(s).")
+    for falha in lote["falhas"]:
+        st.warning(f"Não foi possível analisar o arquivo {falha['arquivo']}. Confira o PDF e tente uma nova análise.")
+    if lote["ranking"]:
+        linhas_ranking = [
+            {
+                "Posição": posicao,
+                "Nome identificado": item["dados"]["nome_candidato"].strip() or "Não informado",
+                "Pontuação de aderência": item["analise"]["score_aderencia"],
+                "Classificação": item["parecer"]["status_recomendacao"],
+            }
+            for posicao, item in enumerate(lote["ranking"], 1)
+        ]
+        st.table(linhas_ranking)
+        selecao = st.selectbox(
+            "Ver avaliação individual", range(len(lote["ranking"])), key="candidato_lote",
+            format_func=lambda pos: f"{pos + 1}º — {linhas_ranking[pos]['Nome identificado']}",
+        )
+        resultado = lote["ranking"][selecao]
+        st.caption(f"Arquivo selecionado: {resultado['arquivo']}")
+
 st.subheader("Avaliação")
-resultado = st.session_state.get("resultado")
 if st.session_state.get("erro"):
     st.error(st.session_state.erro)
+elif lote is not None and not lote["ranking"]:
+    st.error("Nenhum currículo pôde ser analisado. Confira os arquivos e tente novamente.")
 elif resultado is None:
     st.info("A avaliação aparecerá aqui quando você analisar um currículo.")
 
