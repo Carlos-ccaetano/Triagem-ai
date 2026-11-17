@@ -10,7 +10,8 @@ profissionais e apoia a revisão humana; não contrata nem rejeita candidatos au
 
 ## Execução local
 
-Python 3.10 ou superior e uma chave do Google AI Studio são necessários. A `.venv`
+Python 3.10 ou superior é necessário. A chave do Google AI Studio é exigida para novas
+análises; histórico e CSV funcionam sem chamar o Gemini, inclusive sem chave. A `.venv`
 do checkout atual já está preparada; em uma instalação nova, crie-a com
 `python3 -m venv .venv` antes dos comandos abaixo.
 
@@ -47,9 +48,9 @@ A pontuação apoia a revisão humana, sem alterar os rótulos internos do parec
 - Nome vazio aparece como **Não informado**. Pontuação é exibida somente após validação;
   um score ausente ou inválido não recebe zero como valor padrão.
 
-A sessão usa apenas memória. Não há histórico nem gravação de currículos ou resultados em
-arquivo/banco. Fechar a sessão, recarregar completamente a página ou reiniciar o processo
-pode perder o estado; isso não é persistência durável.
+A sessão usa memória. Se não usar **Salvar no histórico**, fechar a sessão, recarregar
+completamente a página ou reiniciar o processo pode perder o resultado atual. O histórico
+SQLite da Etapa 05 complementa a sessão e permite recuperar as avaliações salvas.
 
 ## Análise individual e lote — Etapa 04
 
@@ -85,13 +86,74 @@ de arquivos, conteúdo de currículos, respostas completas ou detalhes das exce�
 da análise individual. Trocar o modo, alterar a vaga ou mudar os arquivos limpa os
 resultados anteriores. Uma nova execução também começa limpa. É necessário solicitar
 outra análise; o aplicativo não reprocessa entradas automaticamente. Os arquivos podem
-precisar ser selecionados novamente ao trocar de modo. Tudo permanece apenas na sessão,
-sem gravação em disco ou histórico entre sessões.
+precisar ser selecionados novamente ao trocar de modo. Até usar **Salvar no histórico**,
+esses resultados permanecem somente na sessão.
 
 Os 43 testes anteriores permanecem. Os testes do lote usam PDFs sintéticos reais em memória,
 Gemini simulado e conexões de rede bloqueadas. Cobrem chamadas às etapas existentes,
 ordenação, empates, limites, falhas isoladas, sessão, seleção sem novas chamadas e os modos.
 Uploads e seus callbacks são simulados no AppTest; não substituem inspeção manual do navegador.
+
+## Histórico local e CSV — Etapa 05
+
+Depois de concluir uma análise individual ou um lote com resultados válidos, clique em
+**Salvar no histórico**. Reexecuções e abertura de detalhes não salvam automaticamente.
+Cada execução tem um identificador único; repetir o clique não duplica nem sobrescreve o
+registro. Uma nova análise gera outro identificador, mesmo que use as mesmas entradas.
+
+O banco é criado automaticamente em `data/triagem.db`, relativo à pasta do projeto.
+Usa `sqlite3`, sem ORM ou migrations. Uma única tabela `execucoes` contém:
+
+| Campo | Conteúdo |
+|---|---|
+| `id` | Identificador único da execução |
+| `data` | Data da conclusão, em UTC; a interface mostra horário de São Paulo |
+| `titulo_vaga`, `descricao_vaga` | Contexto da vaga |
+| `modo` | `individual` ou `lote` |
+| `resultados_json` | Candidatos válidos e quantidade de arquivos que falharam |
+
+Para cada candidato, guarda nome identificado, avaliação estruturada de P02 (pontuação,
+requisitos, evidências, componentes e sínteses objetivas) e parecer de P03 (classificação,
+resumo e três perguntas). Não guarda PDF, texto integral, histórico profissional completo
+de P01, nomes de arquivos, chaves, logs ou respostas brutas. Falhas do lote ficam somente
+como contagem, sem nomes de arquivos. Os dados estruturados ainda podem identificar pessoas.
+A pasta `data/`, incluindo o banco e arquivos auxiliares do SQLite, está ignorada pelo Git.
+
+Abra **Histórico**, selecione uma análise por data/vaga e clique em **Abrir análise**.
+Os resultados usam a mesma apresentação da avaliação atual, inclusive seleção no ranking.
+**Voltar à análise atual** retorna aos dados que continuam na sessão. Uma falha de SQLite
+mostra orientação sem apagar esses resultados. Nenhuma dessas ações executa o Gemini.
+
+Para excluir, marque **Confirmo a exclusão desta análise** e clique em **Excluir análise**.
+Isso remove o registro do histórico; não remove a análise atual da memória nem CSVs já
+baixados. Não há autenticação, criptografia ou backup automático: proteja o acesso ao
+computador e ao arquivo local. Não compartilhe o banco com dados reais de candidatos.
+
+Use **Baixar CSV** na análise atual ou em uma análise aberta do histórico. O arquivo é
+montado em memória com `csv` e `io`, sem CSV temporário no disco. Usa **ponto e vírgula**
+como separador, **UTF-8 com BOM** e campos entre aspas. Cada candidato válido ocupa uma linha:
+posição (vazia na análise individual), nome, título da vaga, score, classificação, resumo
+e três perguntas. Não exporta falhas, currículos, logs ou chaves.
+
+Exemplo sintético de um candidato em lote (BOM não representado):
+
+```csv
+"Posição";"Nome identificado";"Vaga";"Score de aderência";"Classificação";"Resumo da avaliação";"Pergunta de entrevista 1";"Pergunta de entrevista 2";"Pergunta de entrevista 3"
+"1";"Pessoa Exemplo";"Analista de Dados";"80";"Recomendado com Ressalvas";"Python demonstrado; esclarecer tempo de experiência.";"Como aplicou Python?";"Como construiu as consultas SQL?";"Qual seu tempo de uso de Python?"
+```
+
+Na exportação, textos com início de fórmula (`=`, `+`, `-`, `@`, variantes de largura
+completa e controles iniciais) recebem uma tabulação dentro do campo entre aspas. Os
+dados da sessão e do banco não recebem esse prefixo. A medida segue a
+[orientação da OWASP para CSV Injection](https://owasp.org/www-community/attacks/CSV_Injection),
+voltada ao Excel. Outros importadores podem interpretar o prefixo de forma diferente;
+não existe tratamento universal para todas as planilhas e usos posteriores. A tabulação
+permanece no valor se o CSV for lido programaticamente. Não houve validação manual no Excel.
+
+Os testes usam bancos temporários por caso, nunca `data/triagem.db` real. Cobrem criação,
+salvamento individual/lote, nova conexão e nova sessão, ordenação, duplicidade, exclusão
+confirmada, privacidade, erro sem perda da sessão e exportação com três perguntas, sem
+novas chamadas ao Gemini. O clique de download é simulado no AppTest.
 
 ## Pipeline e contratos — Etapa 02
 
@@ -188,7 +250,8 @@ de entrada, substituição do resultado, falhas sem sucesso antigo, erros seguro
 inválidas, zero válido e nome desconhecido. O upload é simulado com seu callback registrado;
 AppTest não substitui inspeção visual/manual do navegador.
 
-Não há persistência em disco, exportação CSV, e-mails, OCR, autenticação ou agentes adicionais.
-O ranking usa avaliações reais do pipeline, sem dados simulados na aplicação. Sua qualidade
+Não há e-mails, OCR, autenticação ou agentes adicionais. Histórico e CSV são exclusivamente
+locais, sem serviço externo de armazenamento. O ranking usa avaliações reais do pipeline,
+sem dados simulados na aplicação. Sua qualidade
 depende das evidências e da interpretação do modelo; não foi aferida com chamadas reais
 nos testes de desenvolvimento. Credenciais e dados locais estão no `.gitignore`.

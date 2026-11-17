@@ -2,6 +2,7 @@ import io
 import json
 import os
 import socket
+import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -89,6 +90,12 @@ class SemRede(unittest.TestCase):
         bloqueio = patch.object(socket.socket, "connect", side_effect=AssertionError("Rede proibida nos testes"))
         bloqueio.start()
         self.addCleanup(bloqueio.stop)
+        temporario = tempfile.TemporaryDirectory(prefix="triagem-teste-")
+        self.addCleanup(temporario.cleanup)
+        self.caminho_banco = Path(temporario.name) / "data" / "triagem.db"
+        banco = patch("persistencia.CAMINHO_BANCO", self.caminho_banco)
+        banco.start()
+        self.addCleanup(banco.stop)
 
 
 class PipelineTests(SemRede):

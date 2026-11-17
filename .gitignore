@@ -16,6 +16,7 @@ venv/
 curriculos/
 uploads/
 dados/
+data/
 resultados/
 *.pdf
 *.csv
