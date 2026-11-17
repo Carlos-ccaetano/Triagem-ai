@@ -137,7 +137,7 @@ class LoteInterfaceTests(anteriores.SemRede):
         self.analisar_lote()
         lote = copy.deepcopy(self.app.session_state["lote"])
         self.assertNotIn("resultado", self.app.session_state)
-        self.assertEqual(self.app.table[0].value["Pontuação de aderência"].tolist(), [100, 80])
+        self.assertEqual(self.app.table[0].value["Pontuação"].tolist(), [100, 80])
         self.assertEqual(self.app.metric[0].value, "SEGUNDO")
         self.app.run()
         self.app.selectbox[0].set_value(1).run()

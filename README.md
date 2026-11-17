@@ -11,8 +11,9 @@ sem agentes autônomos independentes.
 
 ## Estado da validação
 
-Em 17/11/2026, os **67 testes automatizados passaram**, com Gemini simulado e rede
-bloqueada. A interface foi inspecionada no navegador; SQLite e CSV foram exercitados
+Na Etapa 06, os **67 testes automatizados passaram**. No refinamento da interface,
+foram preservados esses casos e acrescentadas três regressões: **70 testes passaram**,
+com Gemini simulado e rede bloqueada. A interface foi inspecionada no navegador; SQLite e CSV foram exercitados
 com dados sintéticos. **A integração real com Gemini está pendente**: não havia chave
 configurada e o usuário optou por continuar sem ela. Foram feitas **0 chamadas reais**.
 Não há evidência de funcionamento completo de ponta a ponta com o modelo real.
@@ -157,11 +158,11 @@ versões diferentes: execute `pip check` e os testes no novo ambiente.
 
 ## Análise individual e lote
 
-Informe título, descrição e requisitos da vaga e escolha o modo:
+Na aba **Nova análise**, informe título, descrição e requisitos da vaga e escolha o modo:
 
-- **Análise individual:** envie um PDF com texto selecionável ou cole o currículo.
+- **Um currículo:** envie um PDF com texto selecionável ou cole o currículo.
   O texto manual preenchido tem prioridade sobre o PDF. Clique em **Analisar currículo**.
-- **Análise em lote:** selecione de **1 a 10 PDFs** da mesma vaga e clique em
+- **Vários currículos:** selecione de **1 a 10 PDFs** da mesma vaga e clique em
   **Analisar currículos**. Onze arquivos são recusados antes de criar o cliente Gemini.
   Não há entrada manual nesse modo; use a análise individual como alternativa.
 
@@ -172,10 +173,14 @@ O lote processa um arquivo por vez. Falhas individuais não interrompem os demai
 recebem score artificial. O ranking inclui somente avaliações completas, ordenadas pelo
 score validado, em ordem decrescente; empates mantêm a ordem de envio. A ordenação é
 feita em Python (`list.sort`), sem prompt P05 ou chamada adicional de IA.
-Selecione **Ver avaliação individual** para consultar os detalhes.
+Selecione **Abrir avaliação de** para consultar os detalhes.
 
-A avaliação mostra nome identificado, score, classificação, resumo, requisitos, evidências
-e três perguntas. Componentes e logs ficam em **Detalhes técnicos da análise**.
+A avaliação mostra vaga, nome identificado, aderência documental, classificação, resumo e
+três perguntas. Os requisitos ficam em **O que foi demonstrado** e **Pontos a esclarecer**,
+com evidências e questões para a entrevista. A tabela completa, os componentes e os logs
+ficam em **Detalhes técnicos da análise**. A classificação usa texto de tamanho normal.
+A aba **Histórico** é independente: consultar resultados salvos preserva a avaliação atual.
+Veja a [comparação visual e as validações da interface](evidencias/ui-humanizacao/README.md).
 Resultados completos permanecem em `st.session_state` durante as reexecuções. Alterar
 entradas ou modo invalida o resultado anterior; uma nova tentativa começa limpa.
 Sem salvar no histórico, fechar a sessão ou reiniciar pode perder a avaliação atual.
@@ -192,15 +197,17 @@ São Paulo. Guarda nome identificado, P02, P03 e contagem de falhas. Não guarda
 texto integral do currículo, P01 completo, nomes de arquivos, chaves, logs ou respostas brutas.
 **Nome e evidências estruturadas ainda podem identificar pessoas.**
 
-Em **Histórico**, selecione um registro e clique em **Abrir análise**. **Voltar à análise
-atual** retorna à sessão. Para excluir, marque **Confirmo a exclusão desta análise** e
-clique em **Excluir análise**. A exclusão remove o registro; não apaga CSVs baixados ou a
-avaliação atual da sessão. Falhas de armazenamento mostram orientação e preservam o resultado atual.
+Na aba **Histórico**, identifique o registro por vaga, data e modo e clique em **Abrir
+avaliação**. A análise atual permanece na aba **Nova análise**. **Fechar avaliação salva**
+fecha apenas a consulta. Para excluir, abra **Excluir avaliação salva**, confira o registro
+indicado, marque **Confirmo a exclusão desta análise** e clique em **Excluir análise**.
+A exclusão não apaga CSVs baixados nem a avaliação atual da sessão. Falhas de armazenamento
+mostram orientação e preservam o resultado atual.
 Não há autenticação, criptografia ou backup automático; proteja o computador e o arquivo.
 
 ## Exportação CSV
 
-**Baixar CSV** exporta a análise atual ou a aberta do histórico, em memória. Cada candidato
+**Exportar resultados (CSV)** exporta a análise atual ou a aberta do histórico, em memória. Cada candidato
 válido ocupa uma linha, sem exportar falhas. São nove colunas: posição (vazia no individual),
 nome, vaga, score, classificação, resumo e três perguntas. O formato usa `;`, UTF-8 com BOM,
 campos entre aspas e quebra de linha CRLF. Resumos com quebras de linha continuam em um campo CSV.

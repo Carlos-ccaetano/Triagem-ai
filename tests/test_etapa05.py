@@ -231,9 +231,9 @@ class HistoricoInterfaceTests(anteriores.SemRede):
             self.app.button(key="abrir_historico").click().run()
             self.app.selectbox(key=f"candidato_historico_{identificador}").set_value(1).run()
             self.assertEqual(len(self.app.exception), 0)
-            self.assertEqual(self.app.metric[0].value, "A")
+            self.assertEqual(self.app.tabs[1].metric[0].value, "A")
             self.assertEqual(self.app.session_state["lote"], lote)
-            self.assertEqual(len(self.app.code), 0)
+            self.assertEqual(len(self.app.tabs[1].code), 0)
             with patch("streamlit.download_button", return_value=True) as download:
                 self.app.run()
             linhas = ler_csv(download.call_args.kwargs["data"])
