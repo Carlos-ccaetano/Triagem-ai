@@ -29,9 +29,31 @@ O texto manual, quando preenchido, tem prioridade sobre o PDF. PDFs sem texto ex
 texto manual; não há OCR. Executar uma análise pela interface faz chamadas reais à API;
 os testes abaixo usam respostas simuladas e bloqueiam conexões de rede.
 
+## Interface e estado da sessão — Etapa 03
+
+A tela tem quatro áreas: Vaga, Currículo, Avaliação e Perguntas para entrevista.
+Os logs e os componentes da pontuação ficam em **Detalhes técnicos da análise**.
+A pontuação apoia a revisão humana, sem alterar os rótulos internos do parecer.
+
+- O pipeline executa somente ao clicar em **Analisar currículo**, com entradas preenchidas.
+- `st.session_state["resultado"]` guarda apenas a última análise completa: dados extraídos,
+  avaliação e parecer. A apresentação fica fora do bloco do botão e reutiliza esse resultado.
+- Alterar título, requisitos, texto manual ou upload limpa resultado, erro e logs pelos
+  callbacks `on_change`. É preciso clicar novamente para analisar as novas entradas.
+- Uma nova tentativa limpa a avaliação anterior antes de validar ou processar os dados.
+  Se falhar, nenhum resultado parcial é salvo e nenhuma avaliação antiga aparece como atual.
+- A mensagem segura de erro permanece na sessão até editar uma entrada ou tentar novamente.
+  O andamento usa `st.status` em três etapas, sem percentuais ou estimativas artificiais.
+- Nome vazio aparece como **Não informado**. Pontuação é exibida somente após validação;
+  um score ausente ou inválido não recebe zero como valor padrão.
+
+A sessão usa apenas memória. Não há histórico nem gravação de currículos ou resultados em
+arquivo/banco. Fechar a sessão, recarregar completamente a página ou reiniciar o processo
+pode perder o estado; isso não é persistência durável.
+
 ## Pipeline e contratos — Etapa 02
 
-- `app.py`: interface, mensagens e logs mínimos da execução. A aba P02 mostra requisitos,
+- `app.py`: interface, mensagens e logs mínimos da execução. A área Avaliação mostra requisitos,
   evidências, perguntas de esclarecimento e componentes da pontuação.
 - `pipeline.py`: extração de PDF, schemas Pydantic e P01 → P02 → P03. Os retornos são
   validados antes do avanço; respostas inválidas interrompem o fluxo.
@@ -119,7 +141,11 @@ não prova relevância semântica, autenticidade ou cobertura completa de todos 
 A categorização, os sinônimos e o significado das evidências ainda dependem do modelo e
 da revisão humana. Não foi feita avaliação real de acurácia ou vieses.
 
-Não há persistência, lote real, CSV, e-mails ou agentes adicionais. O ranking de exemplo
-original continua identificado como simulado. Resultados ainda não são preservados após
-reexecuções da página. Os logs não incluem nome, currículo, resposta completa ou detalhes
-brutos das exceções. Arquivos de credenciais e dados locais estão no `.gitignore`.
+Os testes da Etapa 03 verificam reexecuções sem novas chamadas, invalidação nas mudanças
+de entrada, substituição do resultado, falhas sem sucesso antigo, erros seguros, pontuações
+inválidas, zero válido e nome desconhecido. O upload é simulado com seu callback registrado;
+AppTest não substitui inspeção visual/manual do navegador.
+
+Não há persistência em disco, lote real, CSV, e-mails ou agentes adicionais. A simulação
+de ranking foi retirada da tela. Os logs não incluem nome, currículo, resposta completa ou
+detalhes brutos das exceções. Arquivos de credenciais e dados locais estão no `.gitignore`.

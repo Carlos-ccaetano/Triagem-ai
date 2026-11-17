@@ -221,7 +221,7 @@ class InterfaceTests(SemRede):
                 ]
                 self.analisar()
                 self.assertEqual(self.client.models.generate_content.call_count, chamadas)
-                self.assertIn(etapa, self.app.error[0].value)
+                self.assertIn("Não conseguimos concluir a análise", self.app.error[0].value)
                 self.assertEqual(len(self.app.metric), 0)
 
     def test_erro_provedor_nao_expoe_conteudo_nos_logs_ou_mensagem(self):
