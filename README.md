@@ -90,31 +90,70 @@ Exemplo sintético: `70/70 + 0/20 + 10/10 = 80/100`, com ressalvas. Uma vaga som
 com obrigatórios demonstrados dá `70/70`, normalizado para `100/100`.
 São faixas acadêmicas, sem estudo de validade preditiva ou acurácia.
 
-## Executar localmente no WSL
+## Instalar em outro computador
 
-Requer Python 3.10 ou superior e acesso à API para novas análises. O ambiente validado
-usou Python 3.12.3. Na primeira instalação:
+Instale Git e Python. Recomendamos **Python 3.12**, usado na validação. O código requer
+Python 3.10 ou superior; outras versões não foram verificadas nesta entrega. A instalação
+precisa de acesso à internet para baixar as dependências de `requirements.txt`.
+
+Clone o projeto em uma pasta de sua escolha. Os comandos abaixo usam o Python do ambiente
+virtual diretamente; não é necessário ativá-lo nem mudar a política de execução do PowerShell.
+
+### Linux ou WSL
 
 ```bash
-cd /home/carloscaetano/estudos/Triagem-ai
+git clone https://github.com/Carlos-ccaetano/Triagem-ai.git
+cd Triagem-ai
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 cp -n .env.example .env
 nano .env
-```
-
-Preencha `GEMINI_API_KEY` **somente no arquivo local** e salve. Também é possível usar
-uma variável de ambiente. Não cole a chave em conversas, logs ou commits. `.env`, variantes
-de credenciais, bancos, PDFs e exportações locais estão no `.gitignore`.
-
-Inicie e abra `http://127.0.0.1:8501` no navegador:
-
-```bash
 .venv/bin/python -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
 ```
 
-Encerre com `Ctrl+C`. Se faltar suporte a `venv`/`ensurepip`, prepare-o na distribuição
-antes de instalar. Sem chave, novas análises ficam desabilitadas; histórico e CSV continuam disponíveis.
+### Windows PowerShell
+
+Os comandos pressupõem Python 3.12 instalado com o launcher `py`.
+
+```powershell
+git clone https://github.com/Carlos-ccaetano/Triagem-ai.git
+Set-Location Triagem-ai
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
+notepad .env
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
+```
+
+Abra `http://127.0.0.1:8501` no navegador e encerre o servidor com `Ctrl+C`.
+Se faltar suporte a `venv`/`ensurepip` no Linux, prepare-o na distribuição antes da instalação.
+O histórico usa `America/Sao_Paulo`; os dados de fuso precisam estar disponíveis no ambiente
+Python/sistema. A execução nativa do Windows ainda não foi validada nesta entrega.
+
+### Configuração local da chave
+
+No editor, substitua o marcador de `GEMINI_API_KEY` em `.env` pela sua chave e salve.
+A aplicação carrega o arquivo com `load_dotenv()` e também aceita uma variável de ambiente
+já configurada no processo. A variável existente tem precedência sobre o arquivo.
+Não coloque a chave em comandos, conversas, capturas, logs ou commits. Confira que o arquivo
+está ignorado com `git check-ignore .env`.
+
+Sem chave, novas análises ficam desabilitadas; histórico e CSV continuam disponíveis.
+Executar uma análise solicita a API Google e pode consumir quota/créditos. Os testes
+abaixo usam mocks e não exigem chave nem chamadas reais.
+
+### Caminhos e dados locais
+
+Não há caminho fixo do notebook original no código. O banco é criado automaticamente em
+`data/triagem.db`, relativo à localização de `persistencia.py`, inclusive sua pasta e tabela.
+Os testes localizam o projeto por `__file__`, criam PDFs em memória e usam bancos temporários.
+Nenhum `.env`, banco, currículo ou arquivo da `.venv` original é necessário para instalar.
+
+O clone traz código, testes, documentação e evidências sintéticas. Ele não transfere a
+chave, avaliações salvas ou CSVs locais; cada notebook começa com seu próprio banco vazio.
+Caminhos absolutos no relatório identificam apenas o ambiente dos ensaios históricos.
+Algumas dependências usam limites mínimos, portanto novas instalações podem resolver
+versões diferentes: execute `pip check` e os testes no novo ambiente.
 
 ## Análise individual e lote
 
@@ -178,9 +217,18 @@ em todo importador ou após editar/regravar o CSV. A largura das colunas depende
 ## Testes e limitações
 
 ```bash
+# Linux/WSL
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python -m pip check
 .venv/bin/python -m compileall -q app.py pipeline.py persistencia.py tests
+```
+
+No PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m compileall -q app.py pipeline.py persistencia.py tests
 ```
 
 Os testes usam currículos sintéticos, respostas simuladas, bancos temporários e bloqueio

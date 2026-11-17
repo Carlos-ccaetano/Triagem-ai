@@ -24,3 +24,11 @@ resultados/
 *.sqlite
 *.sqlite3
 *.log
+
+# Arquivos auxiliares do SQLite e documentos acadêmicos locais
+*.db-*
+*.sqlite-*
+*.sqlite3-*
+*.docx
+*.doc
+*.odt
