@@ -131,8 +131,9 @@ separação entre páginas. Não há OCR.
 
 O lote processa um arquivo por vez. Falhas individuais não interrompem os demais e não
 recebem score artificial. O ranking inclui somente avaliações completas, ordenadas pelo
-score validado, em ordem decrescente; empates mantêm a ordem de envio. Não há chamada
-adicional de IA para ordenar. Selecione **Ver avaliação individual** para consultar os detalhes.
+score validado, em ordem decrescente; empates mantêm a ordem de envio. A ordenação é
+feita em Python (`list.sort`), sem prompt P05 ou chamada adicional de IA.
+Selecione **Ver avaliação individual** para consultar os detalhes.
 
 A avaliação mostra nome identificado, score, classificação, resumo, requisitos, evidências
 e três perguntas. Componentes e logs ficam em **Detalhes técnicos da análise**.
@@ -194,5 +195,9 @@ nos dados, sem garantir imunidade a prompt injection. A revisão humana continua
 As versões mínimas de todas as dependências e outras plataformas não foram testadas.
 
 Não há OCR, e-mail automático, autenticação, agentes adicionais, P04 ou deploy.
-A Entrega 4 original não está neste repositório nem nos anexos disponíveis; permanece
-histórica e não foi alterada. Não se atribuem à E4 evidências obtidas no código atual.
+O original `Entrega4.docx` foi localizado em Downloads na revisão de encerramento e
+permanece inalterado, fora do repositório. A comparação de F01–F08, P01–P06, problemas e
+planos da E4 está em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md#revisão-de-encerramento).
+Os registros históricos da E4 não comprovam a integração real da versão atual.
+O [roteiro mínimo de validação real](VALIDACAO_FINAL.md#procedimento-mínimo-para-validação-real)
+usa um currículo fictício e até três chamadas, sem retries; ele não foi executado.

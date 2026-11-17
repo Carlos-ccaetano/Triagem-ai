@@ -28,7 +28,7 @@ integração pendente. **0 de até 9 chamadas reais utilizadas.**
 | Privacidade e versionamento | Aprovado com ressalvas | Logs mínimos, ausência de credenciais por padrões conhecidos, dados locais ignorados. Nome e evidências do histórico ainda são identificáveis; não há criptografia. |
 | Sintaxe e dependências | Aprovado | `compileall` sem erros; `pip check`: `No broken requirements found.`; `git diff --check` sem problemas considerando CRLF. |
 | Integração real com Gemini | Não testado | Chave ausente; nenhuma chamada. P01/P02/P03 reais, coerência semântica, prompt injection real, quota, disponibilidade e latência continuam pendentes. |
-| Comparação com documento E4 original | Não testado | Documento não disponível no repositório ou nos anexos fornecidos. Nenhum documento acadêmico original foi modificado. |
+| Comparação com documento E4 original | Aprovado | Original localizado em Downloads na revisão de encerramento; conteúdo comparado abaixo e hash preservado. Não foi reexecutada a integração descrita na E4. |
 
 ## Defeito comprovado e correção mínima
 
@@ -108,3 +108,197 @@ preservadas. A Etapa 06 foi registrada somente em sua branch local, sem push, me
 Para completar o aceite, configure a chave localmente conforme o README e execute a análise
 individual e o lote de dois currículos fictícios dentro do limite autorizado, sem retries.
 Só então será possível registrar P01/P02/P03 reais e o fluxo completo até SQLite e CSV.
+
+
+## Revisão de encerramento
+
+Revisão de conteúdo em 17/11/2026, sobre o commit técnico `d42e90f0a918d530b5f0be51ccdf233f7416493b`.
+O original foi localizado em `C:/Users/CarlosCaetano/Downloads/Entrega4.docx`, com 33.863 bytes.
+SHA-256: `20eb4fb6634be437ceec1e15b6a33d037b119e5cd55125d977c527020611ec26`.
+Foram lidos texto e tabelas das seções 2–7. Não houve revisão de diagramação, edição ou
+cópia do documento para o repositório. A indicação anterior de indisponibilidade foi atualizada.
+
+As classificações abaixo se referem à implementação atual. **Implementado e validado**
+indica evidência local/automatizada dentro do escopo descrito, sem incluir inferência real
+quando o item depende do Gemini. Os registros da E4 são tratados como documentação
+histórica, sem nova confirmação independente das chamadas ali relatadas.
+
+### Funcionalidades F01 a F08
+
+Fonte: E4, seção 3.1, confrontada com `app.py`, `pipeline.py`, `persistencia.py` e testes.
+
+| Item | E4 | Classificação atual e diferença |
+|---|---|---|
+| F01 — Cadastro da vaga | Formulário funcional, validação de campos vazios | **Implementado e validado.** Título e descrição/requisitos; campos vazios impedem o processamento. |
+| F02 — Extração P01 | Declarada funcional com LLM real | **Implementado, aguardando teste real.** Dados profissionais, experiências e evidências; contrato estrito e testes simulados. |
+| F03 — Aderência P02 | Declarada funcional com LLM real | **Implementado, aguardando teste real.** Requisitos, evidências e rubrica 70/20/10, com rejeição de incoerências. |
+| F04 — Parecer P03 | Parecer e três perguntas; a tabela atribui a ele o cálculo do score | **Implementado, aguardando teste real.** P03 só resume/classifica e produz três perguntas; score pertence exclusivamente a P02. |
+| F05 — PDF individual | Parcial; falha em PDF escaneado | **Implementado e validado** para PDF nativo. Várias páginas, erros seguros e alternativa manual; OCR permanece fora do escopo. Não há garantia de leitura semântica correta de toda diagramação. |
+| F06 — Lote | Lista fixa de três candidatos simulados | **Implementado, aguardando teste real.** De 1 a 10 PDFs passam pelo mesmo pipeline sequencial; lógica, limites, falhas e ranking validados sem API. Não há lista fixa na aplicação atual. |
+| F07 — Histórico | Pendente; somente sessão | **Implementado e validado.** SQLite local, salvamento explícito, recuperação e exclusão confirmada; não salva automaticamente. |
+| F08 — E-mail | Pendente; documento menciona uma prévia sem SMTP | **Fora do escopo aprovado do MVP.** Não há envio nem prévia de e-mail implementados na versão atual. |
+
+### Prompts P01 a P06
+
+Fonte: E4, seção 3.2 e anexos A–C.
+
+| Prompt | E4 | Classificação atual e diferença |
+|---|---|---|
+| P01 | Papel de extração e exemplo de JSON | **Implementado, aguardando teste real.** Mantém extração com exemplo; amplia contrato com experiências e trechos verificáveis. |
+| P02 | Descrito como Chain of Thought, com score | **Implementado, aguardando teste real.** Produz conclusões objetivas, evidências e score; não solicita raciocínio privado. A chave legada `analise_passo_a_passo` foi preservada por compatibilidade. |
+| P03 | Papel de RH, resumo e entrevista | **Implementado, aguardando teste real.** Até quatro linhas e exatamente três perguntas, sem recalcular score; classificação conferida em Python. |
+| P04 | CoVe com falha por reescrever o JSON | **Fora do escopo aprovado do MVP.** Não implementado. Pydantic e conferência textual são controles locais, não uma implementação de CoVe ou verificação semântica completa. |
+| P05 | Ranking com Least-to-Most, pendente | **Fora do escopo aprovado do MVP** como prompt. Não implementado; a funcionalidade de ranking usa **Python**, em `executar_lote`, ordenando `score_aderencia` validado com `list.sort(reverse=True)`. Não gera nova pontuação nem faz chamada de IA para ordenar. |
+| P06 | E-mail de feedback, pendente | **Fora do escopo aprovado do MVP.** Não implementado; sem geração de e-mail ou integração SMTP. |
+
+### Arquitetura e tecnologias
+
+A própria seção 2.2 da E4 descreve um pipeline sequencial em Python. O título do projeto
+menciona agentes, mas isso não corresponde a agentes autônomos independentes no código atual.
+A divisão permanece simples: interface em `app.py`, extração/contratos/prompts em
+`pipeline.py` e SQLite/CSV em `persistencia.py`. Não foram adicionados frameworks.
+
+| Item da E4 | Situação atual | Classificação |
+|---|---|---|
+| Python 3.12, Streamlit 1.39.0 e execução local | Mantidos; Python 3.12.3 e Streamlit 1.39.0 medidos na Etapa 06 | Implementado e validado |
+| Orquestração sequencial Python | P01 → P02 → P03, sem agentes autônomos | Implementado e validado quanto ao encadeamento; inferência aguardando teste real |
+| Gemini `gemini-2.5-flash` e SDK Google Gen AI | Mesmo modelo; SDK 3.4.0 no ambiente registrado; uma tentativa por chamada | Implementado, aguardando teste real |
+| pypdf, Pydantic e python-dotenv | Extração nativa, contratos e carregamento local de configuração | Implementado e validado pelos testes aplicáveis; autenticação real ainda pendente |
+| `st.session_state` como armazenamento | Mantido para a sessão, complementado por SQLite persistente e CSV | Implementado e validado |
+
+Na E4, seção 2.3, o comando de clone aponta para outro repositório, diferente daquele
+informado na identificação do projeto. O README atual usa o diretório WSL correto.
+O original foi preservado; seus comandos não foram executados nesta revisão.
+
+### Problemas registrados e planos para E5
+
+Fontes: E4, seções 5 e 6.1–6.3.
+
+| Problema ou plano | Situação atual | Classificação |
+|---|---|---|
+| Markdown na resposta quebra o parser | MIME JSON e Pydantic rejeitam resposta inválida antes do avanço. Não removem cercas Markdown nem corrigem a resposta automaticamente. Comportamento real do provedor ainda pendente. | Implementado e validado quanto ao bloqueio local |
+| PDF sem texto chega ao modelo | Extração rejeita texto vazio, mostra orientação e permite texto manual no individual. O limite sugerido na E4 de 50 caracteres não foi adotado; a guarda exige texto não vazio. | Implementado e validado |
+| Latência histórica de cerca de 6–8 s | `st.status` mostra etapas/posição. Não há medição atual do Gemini nem comprovação de redução de latência ou tokens. | Parcialmente implementado |
+| Simplificar P04 para inconsistências de datas/experiência | Prompt ausente; controles determinísticos atuais não cobrem toda a semântica proposta. | Fora do escopo aprovado do MVP |
+| Substituir lista simulada por lote com progresso | Loop conectado às funções reais, isolando falhas; testado com respostas simuladas. | Implementado, aguardando teste real |
+| Evitar perda de histórico e exportar CSV | SQLite e CSV implementados; somente resultados explicitamente salvos persistem após fechar a sessão. | Implementado e validado |
+| Bateria com dez currículos reais e métricas | Não realizada. Os testes atuais usam dados sintéticos; não há estudo de acurácia. Esse ensaio não integra o roteiro mínimo fictício abaixo. | Não implementado |
+| Slides, ensaio e demonstração ao vivo | Não há slides ou evidência de ensaio no repositório analisado. Preparação acadêmica separada, sem bloqueio técnico do código. | Não implementado |
+
+### Evidências históricas e evidências atuais
+
+A E4 registra quatro casos: dois aprovados (perfil aderente e perfil de outra área), um
+parcial (texto desorganizado/JSON) e um reprovado (PDF sem texto). Os anexos A–C contêm
+logs textuais apresentados como reais, com score 88 e tempo total de 6,8 s em um exemplo;
+o outro caso registra score 5. O DOCX não contém imagens incorporadas. Esses valores não
+foram reproduzidos nesta revisão, não são resultados atuais e não constituem taxa de acurácia.
+A declaração histórica de cobertura dos três prompts não substitui o teste da versão atual.
+
+Os JSONs dos anexos também não representam os contratos atuais: P01 passou a exigir
+`experiencias`; P02 exige avaliações e componentes; P03 usa o literal `Altamente Recomendado`,
+enquanto a E4 mostra `Altamente Recomendada`. A tabela F04 atribui score a P03, mas o fluxo
+da seção 3.3 o atribui a P02. A versão atual resolve essa ambiguidade: somente P02 o produz.
+Não se espera reproduzir scores históricos sob os contratos e a rubrica atuais.
+
+Nesta revisão, os **67 testes passaram novamente em 12,153 s**. Os seis arquivos de teste
+foram comparados por SHA-256 com `d42e90f` antes e depois da execução e permanecem idênticos.
+Log integral local, ignorado pelo Git: `.venv/revisao-encerramento-testes.log`.
+As capturas e o ensaio prático de SQLite/CSV acima continuam sendo evidências da Etapa 06;
+não foram refeitos nesta revisão documental. Não houve chamadas ao Gemini.
+
+### Situação da documentação e bloqueios
+
+README e este relatório foram confrontados com o código e continuam coerentes sobre
+pipeline, rubrica, PDF/texto, lote, ranking, sessão, SQLite, CSV e ausência de OCR/e-mails.
+Foram corrigidos o registro de indisponibilidade da E4 e a falta da referência explícita a
+ranking em Python sem P05. Nenhuma taxa de acurácia ou aprovação real por mocks foi acrescentada.
+
+O bloqueio para aceite completo é produzir evidência atual do Gemini: chave válida, acesso
+à API/modelo/quota e execução observada. Nesta revisão, não havia `.env` nem variável
+`GEMINI_API_KEY` no processo WSL consultado; valores de credenciais não foram exibidos.
+Um caso fictício de três chamadas verifica a integração mínima, mas não substitui o aceite
+anterior da Etapa 06, que também prevê lote de dois, histórico e CSV com resultados reais.
+P04, P05 como prompt, P06, OCR e e-mails não são pendências bloqueantes do escopo aprovado.
+Slides/ensaio são uma pendência de apresentação; a bateria histórica com dez currículos não
+pode ser declarada realizada. Não se deduz dessa revisão uma nova exigência de implementá-los.
+
+## Procedimento mínimo para validação real
+
+**Roteiro futuro, não executado nesta tarefa.** Uma análise individual completa faz até três
+chamadas, P01 → P02 → P03, sem retries. Não use lote nem clique novamente durante esse caso.
+Uma falha pode encerrar o fluxo antes da terceira chamada. As chamadas de outro ensaio devem
+ser contabilizadas separadamente; este documento não autoriza executá-las nesta revisão.
+
+1. No terminal WSL, configure o arquivo local, sem incluir a chave no comando:
+
+   ```bash
+   cd /home/carloscaetano/estudos/Triagem-ai
+   cp -n .env.example .env
+   nano .env
+   git check-ignore .env
+   ```
+
+   Substitua o marcador por sua chave dentro do editor. Não use `cat .env`, não cole a chave
+   em conversas e não a inclua em logs, imagens ou commits. O nome `.env` deve aparecer como
+   ignorado. `load_dotenv()` lê esse arquivo; a aplicação também aceita a variável de ambiente.
+
+2. Inicie a aplicação real, sem patches, fixtures ou o servidor sintético da Etapa 06:
+
+   ```bash
+   .venv/bin/python -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
+   ```
+
+   Abra `http://127.0.0.1:8501`. O texto será enviado à API Google, embora a interface execute
+   localmente. Confira a branch/commit e mantenha `gemini-2.5-flash`.
+
+3. Escolha **Análise individual** e preencha estes dados exclusivamente fictícios:
+
+   **Título:** Desenvolvedor backend Python.
+
+   **Descrição:** Requisitos obrigatórios: desenvolvimento de APIs com Python e FastAPI;
+   consultas SQL em PostgreSQL; testes automatizados. Experiência: ao menos um ano com
+   Python. Desejável: Docker.
+
+   **Texto manual do currículo:**
+
+   ```text
+   Pessoa Teste 01 — currículo fictício, sem pessoa real associada.
+   Desenvolvedor backend. Tenho 2 anos de experiência em desenvolvimento com Python.
+   Projeto profissional descrito para teste: entre 2024 e 2026 implementei uma API de
+   catálogo usando Python e FastAPI, escrevi consultas SQL em PostgreSQL e testes
+   automatizados com unittest. Formação: curso de desenvolvimento de sistemas.
+   ```
+
+4. Clique uma única vez em **Analisar currículo**. Em **Detalhes técnicos da análise**,
+   confira os registros de validação de P01, P02 e P03. Ausência de erro e os três registros
+   demonstram passagem pelos contratos; não comprovam, sozinhos, correção semântica de
+   todos os campos extraídos por P01, que não são integralmente exibidos na interface.
+   Confira as evidências e o parecer visíveis contra o texto fictício. Não altere os prompts
+   para obter um score predeterminado.
+
+| Etapa | Resultado esperado |
+|---|---|
+| P01 | Estrutura aceita pelo contrato, experiências com trechos existentes e informação desconhecida preservada. Não inventar Docker nem atribuir os dois anos de Python a todas as tecnologias. A confirmação completa campo a campo de P01 exige inspecionar o objeto validado localmente, sem repetir a chamada ou publicar resposta bruta. Se não feita, registre essa limitação. |
+| P02 | Requisitos citados da vaga e evidências dos campos profissionais; Docker não informado exige esclarecimento. Componentes e score coerentes com a rubrica 70/20/10 e categorias presentes. Sem exigir nota exata antecipada. |
+| P03 | Classificação compatível com score e pendências obrigatórias; resumo de até quatro linhas; exatamente três perguntas técnicas pertinentes. Sem novo score ou decisão automática sobre contratação. |
+
+5. Se o caso passar, use **Salvar no histórico**, reabra o registro e exporte o CSV.
+   Confira uma linha de candidato, score, classificação, resumo e três perguntas, sem
+   novas chamadas. Isso complementa o caso individual; o lote real de dois continua um
+   ensaio separado, de até seis chamadas, necessário para o aceite completo da Etapa 06.
+6. Registre somente: data/fuso, commit, modelo, ID sintético do caso, etapas alcançadas,
+   estado do contrato por etapa, score/componentes e classificação recebidos, quantidade
+   de perguntas, observações qualitativas e tempo total realmente medido. Não derive
+   acurácia de um caso. Se não medir, marque tempo como não medido.
+7. Em erro de autenticação/quota/modelo/API/schema ou conteúdo incoerente, marque **Falhou**,
+   registre última etapa observada e categoria da falha. A interface exibe erro genérico;
+   se o código HTTP/tipo não estiver disponível com segurança, registre **não identificado**.
+   Não salve traceback, cabeçalhos, credenciais, currículo integral ou resposta bruta.
+   Não repita automaticamente, não avance manualmente para a etapa seguinte e não aceite
+   um JSON ou score inválido. Reexecução deve ser uma nova tentativa contabilizada.
+
+Um registro de resultado pode ficar em `data/validacao-real/registro.txt`, ignorado pelo Git,
+com campos: `data`, `commit`, `modelo`, `caso`, `etapas_observadas`, `contratos`,
+`revisao_semantica`, `score_e_componentes`, `classificacao`, `perguntas_quantidade`,
+`tempo_total`, `estado_final` e `falha`. No relatório acadêmico, publique somente uma síntese
+sem dados pessoais, diferenciando **aprovado**, **falhou** e **não verificado** por critério.
