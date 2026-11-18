@@ -38,6 +38,18 @@ class HumanizacaoInterfaceTests(anteriores.SemRede):
             self.assertEqual(len(self.app.tabs[0].metric), 0)
         self.client.models.generate_content.assert_not_called()
 
+    def test_historico_exibe_data_em_sao_paulo(self):
+        persistencia.salvar_analise(etapa05.execucao("fuso", data="2026-11-17T12:00:00+00:00"))
+        with patch.dict(anteriores.os.environ, {"GEMINI_API_KEY": ""}):
+            self.app.run()
+            self.assertEqual(len(self.app.tabs[1].error), 0)
+            self.assertIn("17/11/2026 09:00:00", self.app.selectbox(key="analise_historico").options[0])
+            self.app.button(key="abrir_historico").click().run()
+            self.assertEqual(len(self.app.exception), 0)
+            self.assertEqual(len(self.app.tabs[1].error), 0)
+            self.assertTrue(any("17/11/2026 às 09:00:00" in item.value for item in self.app.caption))
+        self.client.models.generate_content.assert_not_called()
+
     def test_avaliacao_atual_e_salva_tem_detalhes_e_exportacoes_separados(self):
         salvo = etapa05.execucao("salva", modo="lote")
         persistencia.salvar_analise(salvo)

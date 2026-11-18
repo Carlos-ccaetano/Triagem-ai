@@ -1,61 +1,158 @@
-# TriagemAI — Análise de evidências profissionais
+# TriagemAI
 
-MVP acadêmico para comparar currículos com os requisitos de uma vaga e preparar a
-entrevista. A pontuação representa aderência documental e apoia a revisão humana;
-não determina contratação ou rejeição.
+MVP acadêmico de triagem de currículos com Python, Streamlit e Google Gemini.
+Compara os requisitos de uma vaga com evidências profissionais do currículo e
+sugere perguntas para a entrevista. A pontuação indica aderência documental e
+apoia a revisão humana; não determina contratação ou rejeição.
 
-A interface, o histórico e a exportação executam localmente. Novas avaliações dependem
-da API do Google Gemini: o texto do currículo e o contexto da vaga são enviados ao Google.
-O projeto usa um **pipeline sequencial de prompts com papéis especializados**,
-sem agentes autônomos independentes.
+## Interface
 
-## Estado da validação
+![Tela inicial do TriagemAI com informações da vaga, envio de PDF e entrada de texto](evidencias/ui-humanizacao/depois-inicial.jpg)
 
-Na Etapa 06, os **67 testes automatizados passaram**. No refinamento da interface,
-foram preservados esses casos e acrescentadas três regressões: **70 testes passaram**,
-com Gemini simulado e rede bloqueada. A interface foi inspecionada no navegador; SQLite e CSV foram exercitados
-com dados sintéticos. **A integração real com Gemini está pendente**: não havia chave
-configurada e o usuário optou por continuar sem ela. Foram feitas **0 chamadas reais**.
-Não há evidência de funcionamento completo de ponta a ponta com o modelo real.
-Veja [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md) para resultados, capturas e ressalvas.
+Captura real da interface local em 1280 × 800, sem avaliação em andamento.
+As telas de resultados na documentação complementar usam dados fictícios e
+respostas simuladas; não comprovam execução real do Gemini.
 
-## Tecnologias e estrutura
+## Funcionalidades implementadas
 
-Python, Streamlit, Google Gen AI SDK, Pydantic, pypdf e python-dotenv.
-SQLite, CSV e testes usam a biblioteca padrão (`sqlite3`, `csv`, `io`, `unittest`).
-Não há ORM ou serviço externo de armazenamento.
+- **Análise individual:** PDF com texto selecionável ou currículo colado no formulário.
+  O texto preenchido tem prioridade sobre o PDF.
+- **Análise em lote:** de 1 a 10 PDFs para a mesma vaga, processados um por vez.
+  Falhas individuais não interrompem os demais arquivos nem recebem score artificial.
+- **Avaliação com evidências:** requisitos demonstrados, pontos a esclarecer, resumo
+  e exatamente três perguntas técnicas. A avaliação completa, os componentes da
+  pontuação e os logs ficam em **Detalhes técnicos da análise**.
+- **Ranking:** somente avaliações completas, em ordem decrescente de score validado.
+  Empates mantêm a ordem de envio; a ordenação é feita em Python.
+- **Histórico SQLite:** salvamento explícito, consulta e exclusão com confirmação.
+  Consultar uma avaliação salva preserva a análise atual.
+- **Exportação CSV:** disponível na análise atual e no histórico, sem nova inferência.
+
+Na aba **Nova análise**, preencha título e descrição/requisitos da vaga, escolha
+**Um currículo** ou **Vários currículos** e clique no botão de análise.
+PDFs corrompidos, vazios ou sem texto recebem uma orientação; não há OCR.
+O resultado fica na sessão do Streamlit. Alterar entradas ou modo invalida a
+avaliação anterior; use **Salvar no histórico** para mantê-la após encerrar a sessão.
+Repetir o salvamento da mesma execução não duplica nem sobrescreve o registro.
+
+Na aba **Histórico**, selecione o registro e use **Abrir avaliação**. A exclusão
+exige abrir **Excluir avaliação salva**, conferir o registro e marcar a confirmação.
+Ela não apaga CSVs já baixados nem a avaliação atual da sessão.
+
+O CSV tem uma linha por candidato válido e nove colunas: posição (vazia no modo
+individual), nome, vaga, score, classificação, resumo e três perguntas. Usa `;`,
+UTF-8 com BOM, campos entre aspas e quebras CRLF. Textos que possam ser interpretados
+como fórmulas recebem uma tabulação no campo exportado, sem alterar a sessão ou o banco.
+No Excel, importe como UTF-8 e selecione apenas ponto e vírgula como delimitador.
+O comportamento da proteção depende do importador e pode mudar após editar o CSV.
+
+## Pipeline P01 → P02 → P03
+
+O processamento é sequencial, com papéis definidos para cada prompt:
+
+| Etapa | Responsabilidade |
+|---|---|
+| **P01 — Extração** | Estrutura dados profissionais, experiências e projetos com trechos de evidência. Preserva informações desconhecidas conforme o contrato, sem calcular durações ausentes. |
+| **P02 — Aderência** | Compara requisitos explícitos da vaga com os dados profissionais de P01, registra situação, evidência e esclarecimento e produz os componentes da pontuação e o score. |
+| **P03 — Parecer** | Resume a avaliação, apresenta a classificação e gera exatamente três perguntas técnicas, sem produzir outro score. |
+
+Cada JSON passa por validação Pydantic antes do avanço. Tipos incorretos, campos
+extras, evidências não localizadas, pontuação incoerente ou classificação
+incompatível interrompem a análise daquele currículo. O nome é omitido das entradas
+de P02/P03. Os logs registram etapas, contagens e erros genéricos, sem nomes,
+arquivos ou respostas brutas.
+
+O modelo configurado é `gemini-2.5-flash`. Uma análise completa usa três chamadas,
+com uma única tentativa por chamada no SDK, sem retries automáticos. Abrir detalhes,
+salvar, consultar o histórico e exportar não executa o modelo.
+
+## Tecnologias e arquitetura
+
+| Tecnologia | Uso |
+|---|---|
+| Python e Streamlit | Interface local, sessão e ações do usuário |
+| Google Gen AI SDK | Comunicação com a API Gemini |
+| Pydantic | Contratos de saída e validações |
+| pypdf | Extração de texto nativo de PDFs, preservando a separação entre páginas |
+| python-dotenv | Carregamento da configuração local |
+| SQLite, CSV e unittest | Persistência, exportação e testes com a biblioteca padrão |
 
 ```text
-app.py              Interface Streamlit, sessão e ações explícitas do usuário
-pipeline.py         PDF, contratos Pydantic e chamadas P01 → P02 → P03
+app.py              Interface Streamlit e sessão
+pipeline.py         Extração de PDF, contratos e pipeline P01 → P02 → P03
 persistencia.py     Histórico SQLite e exportação CSV
 requirements.txt    Dependências de execução
 .env.example        Exemplo de configuração, sem credencial real
-tests/              Testes de contratos, interface, lote e persistência
-evidencias/         Capturas sintéticas e extrato dos testes da validação final
+tests/              Testes automatizados com dados sintéticos
+evidencias/         Capturas e registros de validação
 data/triagem.db     Banco local criado automaticamente; ignorado pelo Git
 ```
 
-### Papéis do pipeline
+Não há ORM ou serviço externo de armazenamento. A interface, o histórico e a
+exportação executam localmente. **Novas avaliações enviam o texto do currículo e
+o contexto da vaga à API do Google Gemini.**
 
-1. **P01 — Extração:** transforma o texto em dados profissionais e experiências/projetos
-   com trechos de evidência. Valores desconhecidos usam `null`, strings vazias ou listas
-   vazias conforme o contrato. Não calcula durações ausentes.
-2. **P02 — Aderência:** confronta requisitos explícitos da vaga com campos profissionais
-   de P01, registra situação/evidência/esclarecimento e produz componentes e score.
-3. **P03 — Parecer:** resume a avaliação, apresenta a classificação e exatamente três
-   perguntas técnicas. Não produz outro score.
+## Instalação local no Windows e Linux
 
-Cada JSON é validado com Pydantic antes do avanço. Tipos incorretos, campos extras,
-evidências não localizadas, pontuação incoerente ou classificação incompatível interrompem
-aquele currículo. O campo de nome é omitido das entradas de P02/P03. Os logs da aplicação
-registram etapas, contagens e erros genéricos, sem nomes, arquivos ou respostas brutas.
+Instale Git e **Python 3.12**, versão usada nos testes. O clone de um repositório
+privado exige uma conta autorizada no GitHub. A instalação precisa de internet
+para baixar as dependências. Os comandos usam o Python do ambiente virtual
+diretamente, sem ativação ou alteração da política do PowerShell.
 
-O modelo é `gemini-2.5-flash`. Cada análise completa usa três chamadas. Os dois modos
-configuram uma única tentativa por chamada no SDK, sem retries automáticos. Abrir detalhes,
-salvar, consultar histórico e exportar não executa o modelo.
+### Windows PowerShell
 
-## Pontuação
+Com Python 3.12 e o launcher `py` instalados:
+
+```powershell
+git clone https://github.com/Carlos-ccaetano/Triagem-ai.git
+Set-Location Triagem-ai
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
+notepad .env
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
+```
+
+### Linux ou WSL
+
+Use um `python3` da versão 3.12. Se a distribuição não incluir `venv`/`ensurepip`,
+instale esse suporte antes de criar o ambiente.
+
+```bash
+git clone https://github.com/Carlos-ccaetano/Triagem-ai.git
+cd Triagem-ai
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+cp -n .env.example .env
+nano .env
+.venv/bin/python -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
+```
+
+Abra [http://127.0.0.1:8501](http://127.0.0.1:8501) e encerre o servidor com `Ctrl+C`.
+
+### Chave, fuso e dados locais
+
+No editor, substitua o marcador de `GEMINI_API_KEY` em `.env` pela sua chave.
+Uma variável já configurada no processo tem precedência sobre o arquivo.
+Não compartilhe a chave; confirme que `.env` está ignorado com `git check-ignore .env`.
+Sem chave, novas análises ficam desabilitadas; histórico e CSV continuam disponíveis.
+Análises reais podem consumir quota/créditos da API.
+
+O histórico armazena datas em UTC e as exibe em `America/Sao_Paulo`. No Windows,
+`requirements.txt` instala `tzdata` para fornecer a base IANA usada por `ZoneInfo`.
+Sem essa base, registros salvos podem ficar inacessíveis pela interface, mesmo que o
+banco esteja íntegro. No Linux, os dados de fuso devem estar disponíveis no sistema.
+Veja a [documentação do Python sobre as fontes de fuso](https://docs.python.org/3.12/library/zoneinfo.html#data-sources).
+
+O banco é criado em `data/triagem.db`, relativo a `persistencia.py`, sem caminho
+fixo de outro computador. Guarda vaga, data, modo, nome identificado, P02, P03 e
+contagem de falhas. Não guarda PDFs, currículo integral, P01 completo, nomes de
+arquivos, chaves, logs ou respostas brutas. **Nomes e evidências ainda podem
+identificar pessoas.** Não há autenticação, criptografia ou backup automático.
+O clone não transfere chaves, avaliações ou CSVs locais: cada instalação começa
+com seu próprio banco vazio.
+
+## Pontuação e interpretação
 
 | Categoria | Peso |
 |---|---:|
@@ -64,21 +161,22 @@ salvar, consultar histórico e exportar não executa o modelo.
 | Desejáveis | 10 |
 
 Somente categorias com requisitos expressos na vaga entram no cálculo. Cada requisito
-tem o mesmo peso dentro de sua categoria e é avaliado uma única vez. Experiência e
-senioridade usam a categoria própria; requisitos sem categoria explícita vão para obrigatórios.
+tem o mesmo peso dentro da categoria e é avaliado uma única vez. Experiência e
+senioridade usam a categoria própria; requisitos sem categoria explícita vão para
+obrigatórios.
 
-- `demonstrado`: evidência suficiente para aquele requisito; recebe crédito.
-- `nao_informado`: informação insuficiente; exige pergunta de esclarecimento.
-- `nao_atendido`: incompatibilidade explícita; exige evidência e esclarecimento.
+- **`demonstrado`:** evidência suficiente; recebe crédito documental.
+- **`nao_informado`:** informação insuficiente; exige esclarecimento na entrevista.
+- **`nao_atendido`:** incompatibilidade explícita; exige evidência e esclarecimento.
 
-As duas últimas situações recebem zero crédito documental. Omissão no currículo não
-significa ausência de competência. Listar uma tecnologia não comprova aplicação prática
-ou duração quando o requisito exige essas informações.
+As duas últimas situações recebem zero crédito. Omissão no currículo não significa
+ausência de competência. Listar uma tecnologia não comprova aplicação prática ou
+duração quando o requisito exige essas informações.
 
 P02 calcula `pontos da categoria = peso × demonstrados / avaliados`, com duas casas
-decimais, e `score = 100 × soma dos pontos / soma dos pesos presentes`, arredondado a
-inteiro. Metades são arredondadas para cima. Python confere os valores recebidos e rejeita
-incoerências; não substitui a pontuação do modelo. Sem requisito avaliável, não há score válido.
+decimais, e `score = 100 × soma dos pontos / soma dos pesos presentes`, arredondado
+a inteiro. Metades são arredondadas para cima. Python confere e rejeita incoerências;
+não substitui a pontuação do modelo. Sem requisito avaliável, não há score válido.
 
 | Score e condições | Classificação documental |
 |---|---|
@@ -91,168 +189,57 @@ Exemplo sintético: `70/70 + 0/20 + 10/10 = 80/100`, com ressalvas. Uma vaga som
 com obrigatórios demonstrados dá `70/70`, normalizado para `100/100`.
 São faixas acadêmicas, sem estudo de validade preditiva ou acurácia.
 
-## Instalar em outro computador
-
-Instale Git e Python. Recomendamos **Python 3.12**, usado na validação. O código requer
-Python 3.10 ou superior; outras versões não foram verificadas nesta entrega. A instalação
-precisa de acesso à internet para baixar as dependências de `requirements.txt`.
-
-Clone o projeto em uma pasta de sua escolha. Os comandos abaixo usam o Python do ambiente
-virtual diretamente; não é necessário ativá-lo nem mudar a política de execução do PowerShell.
-
-### Linux ou WSL
-
-```bash
-git clone https://github.com/Carlos-ccaetano/Triagem-ai.git
-cd Triagem-ai
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-cp -n .env.example .env
-nano .env
-.venv/bin/python -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
-```
+## Testes e validação
 
 ### Windows PowerShell
-
-Os comandos pressupõem Python 3.12 instalado com o launcher `py`.
-
-```powershell
-git clone https://github.com/Carlos-ccaetano/Triagem-ai.git
-Set-Location Triagem-ai
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath .env.example -Destination .env }
-notepad .env
-.\.venv\Scripts\python.exe -m streamlit run app.py --server.address 127.0.0.1 --browser.gatherUsageStats false
-```
-
-Abra `http://127.0.0.1:8501` no navegador e encerre o servidor com `Ctrl+C`.
-Se faltar suporte a `venv`/`ensurepip` no Linux, prepare-o na distribuição antes da instalação.
-O histórico usa `America/Sao_Paulo`; os dados de fuso precisam estar disponíveis no ambiente
-Python/sistema. A execução nativa do Windows ainda não foi validada nesta entrega.
-
-### Configuração local da chave
-
-No editor, substitua o marcador de `GEMINI_API_KEY` em `.env` pela sua chave e salve.
-A aplicação carrega o arquivo com `load_dotenv()` e também aceita uma variável de ambiente
-já configurada no processo. A variável existente tem precedência sobre o arquivo.
-Não coloque a chave em comandos, conversas, capturas, logs ou commits. Confira que o arquivo
-está ignorado com `git check-ignore .env`.
-
-Sem chave, novas análises ficam desabilitadas; histórico e CSV continuam disponíveis.
-Executar uma análise solicita a API Google e pode consumir quota/créditos. Os testes
-abaixo usam mocks e não exigem chave nem chamadas reais.
-
-### Caminhos e dados locais
-
-Não há caminho fixo do notebook original no código. O banco é criado automaticamente em
-`data/triagem.db`, relativo à localização de `persistencia.py`, inclusive sua pasta e tabela.
-Os testes localizam o projeto por `__file__`, criam PDFs em memória e usam bancos temporários.
-Nenhum `.env`, banco, currículo ou arquivo da `.venv` original é necessário para instalar.
-
-O clone traz código, testes, documentação e evidências sintéticas. Ele não transfere a
-chave, avaliações salvas ou CSVs locais; cada notebook começa com seu próprio banco vazio.
-Caminhos absolutos no relatório identificam apenas o ambiente dos ensaios históricos.
-Algumas dependências usam limites mínimos, portanto novas instalações podem resolver
-versões diferentes: execute `pip check` e os testes no novo ambiente.
-
-## Análise individual e lote
-
-Na aba **Nova análise**, informe título, descrição e requisitos da vaga e escolha o modo:
-
-- **Um currículo:** envie um PDF com texto selecionável ou cole o currículo.
-  O texto manual preenchido tem prioridade sobre o PDF. Clique em **Analisar currículo**.
-- **Vários currículos:** selecione de **1 a 10 PDFs** da mesma vaga e clique em
-  **Analisar currículos**. Onze arquivos são recusados antes de criar o cliente Gemini.
-  Não há entrada manual nesse modo; use a análise individual como alternativa.
-
-PDFs corrompidos, vazios ou sem texto geram orientação segura. A extração preserva a
-separação entre páginas. Não há OCR.
-
-O lote processa um arquivo por vez. Falhas individuais não interrompem os demais e não
-recebem score artificial. O ranking inclui somente avaliações completas, ordenadas pelo
-score validado, em ordem decrescente; empates mantêm a ordem de envio. A ordenação é
-feita em Python (`list.sort`), sem prompt P05 ou chamada adicional de IA.
-Selecione **Abrir avaliação de** para consultar os detalhes.
-
-A avaliação mostra vaga, nome identificado, aderência documental, classificação, resumo e
-três perguntas. Os requisitos ficam em **O que foi demonstrado** e **Pontos a esclarecer**,
-com evidências e questões para a entrevista. A tabela completa, os componentes e os logs
-ficam em **Detalhes técnicos da análise**. A classificação usa texto de tamanho normal.
-A aba **Histórico** é independente: consultar resultados salvos preserva a avaliação atual.
-Veja a [comparação visual e as validações da interface](evidencias/ui-humanizacao/README.md).
-Resultados completos permanecem em `st.session_state` durante as reexecuções. Alterar
-entradas ou modo invalida o resultado anterior; uma nova tentativa começa limpa.
-Sem salvar no histórico, fechar a sessão ou reiniciar pode perder a avaliação atual.
-
-## Histórico SQLite
-
-Clique em **Salvar no histórico** depois de uma análise válida. O salvamento é explícito;
-repetir o clique na mesma execução não duplica nem sobrescreve o registro. Uma nova análise
-gera outro identificador, mesmo com as mesmas entradas.
-
-O banco `data/triagem.db` contém uma tabela `execucoes`: identificador, data UTC, título e
-descrição da vaga, modo e resultados estruturados em JSON. A interface mostra horário de
-São Paulo. Guarda nome identificado, P02, P03 e contagem de falhas. Não guarda PDFs,
-texto integral do currículo, P01 completo, nomes de arquivos, chaves, logs ou respostas brutas.
-**Nome e evidências estruturadas ainda podem identificar pessoas.**
-
-Na aba **Histórico**, identifique o registro por vaga, data e modo e clique em **Abrir
-avaliação**. A análise atual permanece na aba **Nova análise**. **Fechar avaliação salva**
-fecha apenas a consulta. Para excluir, abra **Excluir avaliação salva**, confira o registro
-indicado, marque **Confirmo a exclusão desta análise** e clique em **Excluir análise**.
-A exclusão não apaga CSVs baixados nem a avaliação atual da sessão. Falhas de armazenamento
-mostram orientação e preservam o resultado atual.
-Não há autenticação, criptografia ou backup automático; proteja o computador e o arquivo.
-
-## Exportação CSV
-
-**Exportar resultados (CSV)** exporta a análise atual ou a aberta do histórico, em memória. Cada candidato
-válido ocupa uma linha, sem exportar falhas. São nove colunas: posição (vazia no individual),
-nome, vaga, score, classificação, resumo e três perguntas. O formato usa `;`, UTF-8 com BOM,
-campos entre aspas e quebra de linha CRLF. Resumos com quebras de linha continuam em um campo CSV.
-
-Textos com início de fórmula (`=`, `+`, `-`, `@`, variantes de largura completa e controles
-iniciais) recebem uma tabulação dentro do campo exportado. A sessão e o banco não são
-alterados. A tabulação permanece se o arquivo for lido programaticamente.
-
-Na inspeção com Excel foi necessário escolher **Delimitado**, **UTF-8** e **ponto e vírgula**
-no assistente, desmarcando tabulação como separador. O lote abriu com nove colunas;
-`=1+1` e `+1+1` sintéticos permaneceram como texto. Isso não garante comportamento igual
-em todo importador ou após editar/regravar o CSV. A largura das colunas depende do leitor.
-
-## Testes e limitações
-
-```bash
-# Linux/WSL
-.venv/bin/python -m unittest discover -s tests -v
-.venv/bin/python -m pip check
-.venv/bin/python -m compileall -q app.py pipeline.py persistencia.py tests
-```
-
-No PowerShell:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe -m pip check
 .\.venv\Scripts\python.exe -m compileall -q app.py pipeline.py persistencia.py tests
+git diff --check
 ```
 
-Os testes usam currículos sintéticos, respostas simuladas, bancos temporários e bloqueio
-de rede. Cobrem JSONs, rubrica, classificação, PDFs, erros seguros, sessão, lote, empates,
-limites, SQLite, duplicidade, exclusão e CSV. AppTest simula uploads e respostas; não
-substitui um teste completo no navegador com a API real.
+### Linux ou WSL
 
-A integração real, qualidade semântica, latência do Gemini, acurácia e vieses **não foram
-validados nesta etapa**. Conferir trechos não prova autenticidade, relevância ou cobertura
-de todos os requisitos. Instruções de sistema e validação reduzem interferências de comandos
-nos dados, sem garantir imunidade a prompt injection. A revisão humana continua necessária.
-As versões mínimas de todas as dependências e outras plataformas não foram testadas.
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m pip check
+.venv/bin/python -m compileall -q app.py pipeline.py persistencia.py tests
+git diff --check
+```
 
-Não há OCR, e-mail automático, autenticação, agentes adicionais, P04 ou deploy.
-O original `Entrega4.docx` foi localizado em Downloads na revisão de encerramento e
-permanece inalterado, fora do repositório. A comparação de F01–F08, P01–P06, problemas e
-planos da E4 está em [VALIDACAO_FINAL.md](VALIDACAO_FINAL.md#revisão-de-encerramento).
-Os registros históricos da E4 não comprovam a integração real da versão atual.
-O [roteiro mínimo de validação real](VALIDACAO_FINAL.md#procedimento-mínimo-para-validação-real)
-usa um currículo fictício e até três chamadas, sem retries; ele não foi executado.
+Os testes usam currículos sintéticos, Gemini simulado, bancos temporários e rede
+bloqueada. Cobrem contratos, rubrica, PDFs, erros, sessão, lote, ranking, histórico
+e CSV. AppTest não substitui a inspeção no navegador nem o teste com a API real.
+
+Nesta revisão, **71 testes passaram no Windows nativo com Python 3.12.16**:
+os 70 existentes e uma regressão que confere o horário de São Paulo na seleção
+e na abertura do histórico sem chave. `pip check`, compilação e `git diff --check`
+também passaram, sem chamadas reais ao Gemini.
+
+O ambiente registrado na validação anterior usou Python 3.12.3, Streamlit 1.39.0,
+google-genai 3.4.0, pypdf 7.1.0, Pydantic 2.14.3 e python-dotenv 1.2.4.
+Streamlit permanece fixado em 1.39.0; o SDK foi fixado na versão documentada,
+pois o mínimo anterior, 1.0.0, não aceita `retry_options` usado pela aplicação.
+As demais dependências mantêm limites mínimos: o arquivo não fixa todo o ambiente.
+Para repetir as versões diretas documentadas, acrescente `"pypdf==7.1.0"`
+`"pydantic==2.14.3"` `"python-dotenv==1.2.4"` ao comando de instalação.
+Outras linhas do Python e todas as versões mínimas não foram validadas.
+
+## Limitações e documentação complementar
+
+A integração real com Gemini permanece pendente: os ensaios desta entrega não fazem
+chamadas reais. Qualidade semântica, latência, acurácia e vieses não foram medidos.
+Conferir trechos não prova autenticidade, relevância ou cobertura de todos os requisitos.
+Instruções de sistema e validações reduzem interferências de comandos nos dados, sem
+garantir imunidade a prompt injection. A revisão humana continua necessária.
+
+Não há OCR, envio de e-mail, autenticação, prompts P04–P06 ou deploy.
+
+- [Validação final e confronto com a documentação acadêmica](VALIDACAO_FINAL.md):
+  resultados históricos, escopo e limitações dos ensaios.
+- [Interface e comparação visual](evidencias/ui-humanizacao/README.md):
+  capturas reais com dados sintéticos e validação dos 70 testes da base.
+- [Roteiro mínimo de validação real](VALIDACAO_FINAL.md#procedimento-mínimo-para-validação-real):
+  procedimento futuro com currículo fictício; não executado nesta revisão.

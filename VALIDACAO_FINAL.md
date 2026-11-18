@@ -336,3 +336,98 @@ Gemini bloqueado durante a verificação. Nenhuma chamada real ao Gemini foi rea
 Este registro documental complementa a versão publicada, sem alterar o código validado.
 Logs e checkouts desse ensaio ficam em `data/verificacao-publicacao/`, ignorados pelo Git.
 O aceite completo do MVP continua dependendo dos ensaios reais descritos neste relatório.
+
+## Refinamento documental e portabilidade Windows
+
+Revisão em 17/11/2026, na branch local `codex/refinamento-readme-portabilidade`,
+criada da `main` remota em `539e82184462e3edb24c7845ba786a2dcba3764d`.
+O README foi reorganizado com a captura original `evidencias/ui-humanizacao/depois-inicial.jpg`,
+inspecionada em 1280 × 800, legível e sem dados pessoais ou avaliações na tela.
+Os três módulos da aplicação, os prompts, os contratos e a rubrica permanecem idênticos à base.
+
+### Ensaios locais
+
+Ambiente novo e isolado no Windows nativo, com Python 3.12.16, Streamlit 1.39.0,
+google-genai 3.4.0, pypdf 7.1.0, Pydantic 2.14.3, python-dotenv 1.2.4 e tzdata 2026.6.
+As versões diretas das bibliotecas repetem o ambiente anterior; o patch do Python
+e as dependências transitivas podem diferir. Não foi criado um lock completo.
+
+| Verificação | Resultado |
+|---|---|
+| Suíte existente, antes do novo teste | 70 testes aprovados em 29,952 s |
+| Suíte final | 71 testes aprovados em 21,405 s |
+| Novo caso | Histórico sem chave: `12:00 UTC` aparece como `09:00` em São Paulo na seleção e na avaliação aberta; cliente Gemini não chamado |
+| Dependências e sintaxe | `pip check`, `compileall` e `git diff --check` aprovados |
+| README | Links locais válidos; apenas a captura principal, original e inalterada |
+| Gemini real | Zero chamadas; respostas simuladas e rede bloqueada nos testes |
+
+Os logs completos ficam em `.venv/testes-base-windows.log` e
+`.venv/testes-refinamento-windows.log`, ignorados pelo Git. Não houve nova inspeção
+da aplicação no navegador, ensaio manual de CSV no Excel ou execução da suíte no Linux.
+As evidências anteriores dessas plataformas e fluxos continuam com seu alcance original.
+
+### Fuso e dependências
+
+Sem dados IANA, `ZoneInfo("America/Sao_Paulo")` gera `ZoneInfoNotFoundError`.
+No aplicativo, isso é capturado como falha de acesso ao histórico ao montar os
+rótulos dos registros ou abrir uma avaliação salva; o banco não é danificado.
+A falha foi reproduzida no Windows com `-S`, que omite os pacotes instalados.
+Com `tzdata`, a mesma conversão foi aprovada. A dependência direta adicionada foi
+somente `tzdata; sys_platform == "win32"`. O pandas 2.3.3 também a instala
+transitivamente; a declaração explícita evita depender desse detalhe.
+
+Para repetir o diagnóstico no PowerShell, após a instalação descrita no README:
+
+```powershell
+# Sem os pacotes instalados: espera-se ZoneInfoNotFoundError no Windows sem base IANA.
+.\.venv\Scripts\python.exe -S -c "from zoneinfo import ZoneInfo; ZoneInfo('America/Sao_Paulo')"
+# Com tzdata: a conversão deve passar.
+.\.venv\Scripts\python.exe -c "from datetime import datetime; from zoneinfo import ZoneInfo; assert datetime.fromisoformat('2026-11-17T12:00:00+00:00').astimezone(ZoneInfo('America/Sao_Paulo')).isoformat() == '2026-11-17T09:00:00-03:00'"
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p test_ui.py -k test_historico_exibe_data_em_sao_paulo -v
+```
+
+A [documentação do Python](https://docs.python.org/3.12/library/zoneinfo.html#data-sources)
+explica a ausência habitual da base IANA no Windows e o uso de `tzdata`.
+No Linux, o marcador não instala esse pacote; a base de fusos deve vir do sistema.
+
+O [SDK 1.0.0](https://github.com/googleapis/python-genai/blob/v1.0.0/google/genai/types.py)
+não declara `retry_options` em `HttpOptions`, opção usada em `app.py`.
+Isso foi conferido também no wheel oficial baixado, sem instalá-lo.
+O SDK foi fixado em `3.4.0`, já documentado e usado nos ensaios; a construção local
+de `HttpOptions(retry_options={"attempts": 1})` passou sem acesso à API.
+Streamlit e os demais limites declarados foram preservados, sem atualização em massa.
+Não foram testadas todas as versões mínimas permitidas.
+
+### About do GitHub
+
+A descrição foi atualizada pela API com a autenticação Git existente e confirmada
+por nova leitura. O conector não oferecia edição desses metadados e a tentativa
+de acesso pelo navegador foi interrompida pela automação antes de qualquer alteração.
+
+> MVP acadêmico de triagem de currículos com Python, Streamlit e Google Gemini. Compara requisitos, apresenta evidências e sugere perguntas para entrevistas.
+
+Os oito topics solicitados já estavam configurados e foram preservados e conferidos:
+`python`, `streamlit`, `google-gemini`, `prompt-engineering`, `resume-screening`,
+`recruitment`, `sqlite`, `pydantic`. Website confirmado vazio; visibilidade confirmada
+privada. A requisição de edição alterou somente `description`.
+
+Na revisão anterior, as alterações ficaram locais para revisão, sem commit ou publicação.
+A publicação foi autorizada posteriormente, após nova auditoria do diff e revalidação.
+
+### Revalidação para publicação
+
+Em 17/11/2026, os **71 testes passaram novamente no Windows nativo em 31,226 s**,
+com Gemini simulado e rede bloqueada. `pip check`, `compileall` e `git diff --check`
+passaram. O SDK instalado corresponde a `google-genai==3.4.0`; o marcador de
+`tzdata` foi validado para Windows e Linux e a conversão UTC → São Paulo passou.
+Nenhuma dependência foi atualizada. Log local: `.venv/testes-publicacao-windows.log`.
+
+A auditoria confirmou somente os quatro arquivos previstos, preservação dos testes
+anteriores e dos módulos da aplicação, imagem e links locais válidos e ausência de
+indicadores de caminhos absolutos, credenciais ou dados pessoais nas linhas introduzidas.
+Essa inspeção não garante detecção de todo segredo possível.
+
+Esta cópia está dentro da pasta configurada de uma conta OneDrive corporativa.
+Arquivos ignorados pelo Git, inclusive `.env`, bancos e CSVs locais, podem ser
+sincronizados pelo OneDrive. Não foram abertos, copiados, movidos ou apagados arquivos
+de configuração sensível, bancos ou credenciais para esta verificação.
